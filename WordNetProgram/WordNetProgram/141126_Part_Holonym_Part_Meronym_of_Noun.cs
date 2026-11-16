@@ -15,9 +15,11 @@ namespace WordNetProgram
 {
     public partial class _141126_Part_Holonym_Part_Meronym_of_Noun : Form
     {
-        private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\16-Oct-2026_Holonym_Meronym_WinForm\holonym_meronym_backend5.py";
+        // private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\16-Oct-2026_Holonym_Meronym_WinForm\holonym_meronym_backend5.py";
+        private string pythonScript = System.IO.Path.Combine(AppContext.BaseDirectory, "holonym_meronym_backend5.py");
         //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Inputs_of_Merge_Program\all_Merged_Thai\Merged_Thai_Noun.json";
-        private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Inputs_of_Merge_Program\No_Gemini_Merged_Thai_Noun.json";
+        //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Inputs_of_Merge_Program\No_Gemini_Merged_Thai_Noun.json";
+        private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Noun.json");
 
         private string currentSvgPath = string.Empty;
         private string currentHtmlFilePath = string.Empty;

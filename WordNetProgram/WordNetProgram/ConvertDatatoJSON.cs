@@ -1028,7 +1028,7 @@ namespace WordNetProgram
         private void btNounViewOnNotepad_Click(object sender, EventArgs e)
         {
             string jsonOutputFolder = Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON");
-            string jsonPath = Path.Combine(jsonOutputFolder, "Merged_Thai_Noun.json"); // CHANGE Noun to Adj/Verb/Adv for other buttons
+            string jsonPath = Path.Combine(jsonOutputFolder, "Merged_Thai_Noun.json");
 
             if (File.Exists(jsonPath))
             {
@@ -1144,13 +1144,8 @@ namespace WordNetProgram
 
         private void btAdjViewOnNotepad_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(tbFolderPath.Text))
-            {
-                MessageBox.Show("Please select the target folder first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            string jsonPath = Path.Combine(tbFolderPath.Text, "Merged_Thai_Adj.json");
+            string jsonOutputFolder = Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON");
+            string jsonPath = Path.Combine(jsonOutputFolder, "Merged_Thai_Adj.json");
 
             if (File.Exists(jsonPath))
             {
@@ -1165,9 +1160,10 @@ namespace WordNetProgram
             }
             else
             {
-                MessageBox.Show("Merged_Thai_Adj.json does not exist. Convert the data first.", "File Missing", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"{Path.GetFileName(jsonPath)} does not exist. Convert the data first.", "File Missing", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
+
         private void SetupVerbJsonDataGridView()
         {
             dgvMergedVerbJson.AutoGenerateColumns = false;
@@ -1263,13 +1259,8 @@ namespace WordNetProgram
         }
         private void btVerbViewOnNotepad_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(tbFolderPath.Text))
-            {
-                MessageBox.Show("Please select the target folder first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            string jsonPath = Path.Combine(tbFolderPath.Text, "Merged_Thai_Verb.json");
+            string jsonOutputFolder = Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON");
+            string jsonPath = Path.Combine(jsonOutputFolder, "Merged_Thai_Verb.json");
 
             if (File.Exists(jsonPath))
             {
@@ -1284,7 +1275,7 @@ namespace WordNetProgram
             }
             else
             {
-                MessageBox.Show("Merged_Thai_Verb.json does not exist. Convert the data first.", "File Missing", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"{Path.GetFileName(jsonPath)} does not exist. Convert the data first.", "File Missing", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
         private void SetupAdvJsonDataGridView()
@@ -1382,13 +1373,8 @@ namespace WordNetProgram
         }
         private void btAdvViewOnNotepad_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(tbFolderPath.Text))
-            {
-                MessageBox.Show("Please select the target folder first.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            string jsonPath = Path.Combine(tbFolderPath.Text, "Merged_Thai_Adv.json");
+            string jsonOutputFolder = Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON");
+            string jsonPath = Path.Combine(jsonOutputFolder, "Merged_Thai_Adv.json");
 
             if (File.Exists(jsonPath))
             {
@@ -1403,7 +1389,7 @@ namespace WordNetProgram
             }
             else
             {
-                MessageBox.Show("Merged_Thai_Adv.json does not exist. Convert the data first.", "File Missing", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"{Path.GetFileName(jsonPath)} does not exist. Convert the data first.", "File Missing", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 

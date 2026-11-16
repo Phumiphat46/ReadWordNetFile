@@ -39,10 +39,11 @@ namespace WordNetProgram
         private RichTextBox rtbEntityDetails = null;
 
         // Define paths (Use backend4.py if you want SVG-only generation without the 10-node limit)
-        private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\backend5.py";
-        private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Inputs_of_Merge_Program\No_Gemini_Merged_Thai_Noun.json";
+        //private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\backend5.py";
+        private string pythonScript = System.IO.Path.Combine(AppContext.BaseDirectory, "parent_child_backend5.py");
+        //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Inputs_of_Merge_Program\No_Gemini_Merged_Thai_Noun.json";
         //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\Test_Case_Mammal_to_Offspring_of_Working_dog.noun.json";
-
+        private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Noun.json");
 
         public _111126_Parent_Child_Of_Noun()
         {

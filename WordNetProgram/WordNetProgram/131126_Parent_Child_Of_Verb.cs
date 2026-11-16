@@ -38,8 +38,10 @@ namespace WordNetProgram
         private Panel pnlEntityDetails = null;
         private RichTextBox rtbEntityDetails = null;
 
-        private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\backend4-1.py";
-        private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\Merged_Thai_Verb.json";
+        //private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\backend4-1.py";
+        private string pythonScript = System.IO.Path.Combine(AppContext.BaseDirectory, "parent_child_backend5.py");
+        // private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\Merged_Thai_Verb.json";
+        private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Verb.json");
 
         public _131126_Parent_Child_Of_Verb()
         {             
@@ -424,7 +426,7 @@ namespace WordNetProgram
                     Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
                     TextAlign = ContentAlignment.MiddleLeft,
                     Font = new Font("Tahoma", 9.5f, i == 0 ? FontStyle.Bold : FontStyle.Regular),
-                    BackColor = i == 0 ? Color.FromArgb(255, 224, 178) : Color.FromArgb(249, 249, 249),
+                    BackColor = i == 0 ? Color.FromArgb(173, 216, 230) : Color.FromArgb(249, 249, 249),
                     FlatStyle = FlatStyle.Flat,
                     Cursor = Cursors.Hand
                 };
@@ -468,7 +470,7 @@ namespace WordNetProgram
                 if (ctrl is Button b)
                 {
                     b.FlatAppearance.BorderSize = (b == activeBtn) ? 2 : 1;
-                    b.FlatAppearance.BorderColor = (b == activeBtn) ? Color.FromArgb(230, 126, 34) : Color.LightGray;
+                    b.FlatAppearance.BorderColor = (b == activeBtn) ? Color.FromArgb(0, 102, 204) : Color.LightGray;
                 }
             }
 
