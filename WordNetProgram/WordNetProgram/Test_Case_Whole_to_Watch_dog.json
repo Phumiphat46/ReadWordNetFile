@@ -1,0 +1,1170 @@
+[
+{
+    "Offset": "00003553",
+    "LexFileNum": "03",
+    "SynsetType": "n",
+    "Words": [
+      "whole",
+      "unit"
+    ],
+    "Gloss": "an assemblage of parts that is regarded as a single entity; \"how big is that part compared to the whole?\"; \"the team is a unit",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "หน่วย"
+    ],
+    "ThaiWordsSource": "Dhanon",
+    "Antonyms": [],
+    "Hypernyms": [],
+    "Hyponyms": [
+      {
+        "Target": "00004258",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [
+      {
+        "Target": "03892891",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "04164989",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Attributes": [],
+    "DerivationallyRelated": [
+      {
+        "Target": "01462005",
+        "POS": "v",
+        "SourceTarget": "0204"
+      },
+      {
+        "Target": "00367685",
+        "POS": "v",
+        "SourceTarget": "0201"
+      },
+      {
+        "Target": "01385458",
+        "POS": "v",
+        "SourceTarget": "0201"
+      },
+      {
+        "Target": "00368109",
+        "POS": "v",
+        "SourceTarget": "0201"
+      },
+      {
+        "Target": "00784215",
+        "POS": "a",
+        "SourceTarget": "0103"
+      }
+    ],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "00004258",
+    "LexFileNum": "03",
+    "SynsetType": "n",
+    "Words": [
+      "living_thing",
+      "animate_thing"
+    ],
+    "Gloss": "a living (or once living) entity",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "สิ่งมีชีวิิต"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "00003553",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+      {
+        "Target": "00004475",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [
+      {
+        "Target": "01646941",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05056234",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "00004475",
+    "LexFileNum": "03",
+    "SynsetType": "n",
+    "Words": [
+      "organism",
+      "being"
+    ],
+    "Gloss": "a living thing that has (or can develop) the ability to act or function independently",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "สิ่งมีชีวิต"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "00004258",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+      {
+        "Target": "00015388",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [
+      {
+        "Target": "05267345",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "MeronymsPart": [
+      {
+        "Target": "00006484",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05220461",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Attributes": [],
+    "DerivationallyRelated": [
+      {
+        "Target": "02614181",
+        "POS": "v",
+        "SourceTarget": "0201"
+      },
+      {
+        "Target": "02986509",
+        "POS": "a",
+        "SourceTarget": "0102"
+      },
+      {
+        "Target": "01679459",
+        "POS": "a",
+        "SourceTarget": "0101"
+      },
+      {
+        "Target": "01093142",
+        "POS": "a",
+        "SourceTarget": "0101"
+      }
+    ],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [
+      {
+        "Target": "00270856",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00327031",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01665816",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05431926",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05432623",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "06088995",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "08657249",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "13514314",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "13517553",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "00015388",
+    "LexFileNum": "03",
+    "SynsetType": "n",
+    "Words": [
+      "animal",
+      "animate_being",
+      "beast",
+      "brute",
+      "creature",
+      "fauna"
+    ],
+    "Gloss": "a living organism characterized by voluntary movement",
+    "ThaiWordsCount": "5",
+    "ThaiWords": [
+      "สัตว์",
+      "สัตว์ป่า",
+      "สิ่งมีชีวิต",
+      "เดียรัจฉาน",
+      "สัตว์เดียรัจฉาน"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "00004475",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+      {
+        "Target": "01466257",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01313093",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [
+      {
+        "Target": "05267548",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "MeronymsPart": [
+      {
+        "Target": "05538625",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05601198",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Attributes": [],
+    "DerivationallyRelated": [
+      {
+        "Target": "01617192",
+        "POS": "v",
+        "SourceTarget": "0502"
+      },
+      {
+        "Target": "01263445",
+        "POS": "a",
+        "SourceTarget": "0301"
+      },
+      {
+        "Target": "01263445",
+        "POS": "a",
+        "SourceTarget": "0302"
+      },
+      {
+        "Target": "01680756",
+        "POS": "v",
+        "SourceTarget": "0101"
+      },
+      {
+        "Target": "01680756",
+        "POS": "v",
+        "SourceTarget": "0102"
+      }
+    ],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [
+      {
+        "Target": "00057992",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00147052",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00160288",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00214461",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00313701",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00314639",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00315254",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00315383",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01427010",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01488616",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01904698",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01958898",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01959111",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "02252634",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "02252877",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00227595",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00320284",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01326291",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01375204",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "04474466",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "04828925",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05216365",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05551318",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05658826",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "07560903",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "09469285",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "10603959",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "10648033",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "13895852",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "14224547",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00197423",
+        "POS": "v",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00301856",
+        "POS": "v",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00302130",
+        "POS": "v",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01169589",
+        "POS": "v",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01576478",
+        "POS": "v",
+        "SourceTarget": "0000"
+      }
+    ],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "01466257",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "chordate"
+    ],
+    "Gloss": "any animal of the phylum Chordata having a notochord or spinal column",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "คอร์เดต"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "00015388",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+      {
+        "Target": "01471682",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01465994",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [
+      {
+        "Target": "02695966",
+        "POS": "a",
+        "SourceTarget": "0101"
+      }
+    ],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "01471682",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "vertebrate",
+      "craniate"
+    ],
+    "Gloss": "animals having a bony or cartilaginous skeleton with a segmented spinal column and a large brain enclosed in a skull or cranium",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "สัตว์ที่มีกระดูกสันหลัง"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "01466257",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+      {
+        "Target": "01861778",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01471070",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [
+      {
+        "Target": "02157415",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "02157557",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "02158213",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05279026",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05552607",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05563034",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05566097",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Attributes": [],
+    "DerivationallyRelated": [
+      {
+        "Target": "02510062",
+        "POS": "a",
+        "SourceTarget": "0101"
+      }
+    ],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [
+      {
+        "Target": "05279026",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05399847",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05515287",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05586446",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+{
+    "Offset": "01861778",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "mammal",
+      "mammalian"
+    ],
+    "Gloss": "any warm-blooded vertebrate having the skin more or less covered with hair; young are born alive except for the small subclass of monotremes and nourished with milk",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "สัตว์เลี้ยงลูกด้วยนม"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+	  {
+        "Target": "01471682",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+	],
+    "Hyponyms": [
+      {
+        "Target": "01886756",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01861465",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [
+      {
+        "Target": "01898731",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05254393",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Attributes": [],
+    "DerivationallyRelated": [
+      {
+        "Target": "02832272",
+        "POS": "a",
+        "SourceTarget": "0201"
+      }
+    ],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [
+      {
+        "Target": "00751170",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "00751353",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "02137806",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "02138257",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "02539034",
+        "POS": "a",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01472303",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01472638",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01472939",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01473393",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "05389310",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "01429322",
+        "POS": "v",
+        "SourceTarget": "0000"
+      }
+    ],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "01886756",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "placental",
+      "placental_mammal",
+      "eutherian",
+      "eutherian_mammal"
+    ],
+    "Gloss": "mammals having a placenta; all mammals except monotremes and marsupials",
+    "ThaiWordsCount": "2",
+    "ThaiWords": [
+      "ยูเทเรียน",
+      "สัตว์เลี้ยงลูกด้วยนมที่มีรก"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "01861778",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+      {
+        "Target": "02075296",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01886220",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [
+      {
+        "Target": "01830946",
+        "POS": "a",
+        "SourceTarget": "0101"
+      }
+    ],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "02075296",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "carnivore"
+    ],
+    "Gloss": "a terrestrial or aquatic flesh-eating mammal; \"terrestrial carnivores have four or five clawed digits on each limb\"",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "สัตว์กินเนื้อ"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "01886756",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+	  {
+        "Target": "02083346",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "02074915",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "02083346",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "canine",
+      "canid"
+    ],
+    "Gloss": "any of various fissiped mammals with nonretractile claws and typically long muzzles",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "สุนัข"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "02075296",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+      {
+        "Target": "02084071",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "02083038",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [
+      {
+        "Target": "02439929",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Attributes": [],
+    "DerivationallyRelated": [
+      {
+        "Target": "02677703",
+        "POS": "a",
+        "SourceTarget": "0101"
+      }
+    ],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "02084071",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "dog",
+      "domestic_dog",
+      "Canis_familiaris"
+    ],
+    "Gloss": "a member of the genus Canis (probably descended from the common wolf) that has been domesticated by man since prehistoric times; occurs in many breeds; \"the dog barked all night\"",
+    "ThaiWordsCount": "3",
+    "ThaiWords": [
+      "สุนัข",
+      "หมา",
+      "หมาบ้าน"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "02083346",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+	  {
+        "Target": "02103406",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+	],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "02083863",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
+      {
+        "Target": "07994941",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [
+      {
+        "Target": "02158846",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "02103406",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "working_dog"
+    ],
+    "Gloss": "any of several breeds of usually large powerful dogs bred to work as draft animals and guard and guide dogs",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "สุนัขแรงงาน"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "02084071",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+	  {
+        "Target": "02103841",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+	],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "02103841",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "watchdog",
+      "guard_dog"
+    ],
+    "Gloss": "a dog trained to guard property",
+    "ThaiWordsCount": "2",
+    "ThaiWords": [
+      "สุนัขเฝ้ายาม",
+      "หมาเฝ้ายาม"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "02103406",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  }
+]

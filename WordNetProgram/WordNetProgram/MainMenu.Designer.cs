@@ -28,31 +28,31 @@
         /// </summary>
         private void InitializeComponent()
         {
-            btConvertToJson = new System.Windows.Forms.Button();
-            btWatchGraph = new System.Windows.Forms.Button();
-            btSearchData = new System.Windows.Forms.Button();
-            menuStrip1 = new System.Windows.Forms.MenuStrip();
-            fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            addThaiWordToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            convertTheMergedToJSONToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            watchRelationshipGraphToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            searchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            gbApplication = new System.Windows.Forms.GroupBox();
-            btAddThaiToWordNet = new System.Windows.Forms.Button();
-            Title = new System.Windows.Forms.Label();
-            button1 = new System.Windows.Forms.Button();
+            btConvertToJson = new Button();
+            btWatchGraph = new Button();
+            btSearchData = new Button();
+            menuStrip1 = new MenuStrip();
+            fileToolStripMenuItem = new ToolStripMenuItem();
+            addThaiWordToolStripMenuItem = new ToolStripMenuItem();
+            convertTheMergedToJSONToolStripMenuItem = new ToolStripMenuItem();
+            watchRelationshipGraphToolStripMenuItem = new ToolStripMenuItem();
+            searchToolStripMenuItem = new ToolStripMenuItem();
+            exitToolStripMenuItem = new ToolStripMenuItem();
+            helpToolStripMenuItem = new ToolStripMenuItem();
+            aboutToolStripMenuItem = new ToolStripMenuItem();
+            gbApplication = new GroupBox();
+            button1 = new Button();
+            btAddThaiToWordNet = new Button();
+            Title = new Label();
             menuStrip1.SuspendLayout();
             gbApplication.SuspendLayout();
             SuspendLayout();
             // 
             // btConvertToJson
             // 
-            btConvertToJson.Location = new System.Drawing.Point(136, 114);
+            btConvertToJson.Location = new Point(136, 114);
             btConvertToJson.Name = "btConvertToJson";
-            btConvertToJson.Size = new System.Drawing.Size(288, 29);
+            btConvertToJson.Size = new Size(288, 29);
             btConvertToJson.TabIndex = 0;
             btConvertToJson.Text = "2. Convert Data to JSON";
             btConvertToJson.UseVisualStyleBackColor = true;
@@ -60,9 +60,9 @@
             // 
             // btWatchGraph
             // 
-            btWatchGraph.Location = new System.Drawing.Point(136, 149);
+            btWatchGraph.Location = new Point(136, 149);
             btWatchGraph.Name = "btWatchGraph";
-            btWatchGraph.Size = new System.Drawing.Size(288, 29);
+            btWatchGraph.Size = new Size(288, 29);
             btWatchGraph.TabIndex = 1;
             btWatchGraph.Text = "3. Watch Relationship Graph";
             btWatchGraph.UseVisualStyleBackColor = true;
@@ -70,9 +70,9 @@
             // 
             // btSearchData
             // 
-            btSearchData.Location = new System.Drawing.Point(136, 184);
+            btSearchData.Location = new Point(136, 184);
             btSearchData.Name = "btSearchData";
-            btSearchData.Size = new System.Drawing.Size(288, 29);
+            btSearchData.Size = new Size(288, 29);
             btSearchData.TabIndex = 2;
             btSearchData.Text = "4. Search Data";
             btSearchData.UseVisualStyleBackColor = true;
@@ -80,66 +80,66 @@
             // 
             // menuStrip1
             // 
-            menuStrip1.ImageScalingSize = new System.Drawing.Size(20, 20);
-            menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] { fileToolStripMenuItem, helpToolStripMenuItem, aboutToolStripMenuItem });
-            menuStrip1.Location = new System.Drawing.Point(0, 0);
+            menuStrip1.ImageScalingSize = new Size(20, 20);
+            menuStrip1.Items.AddRange(new ToolStripItem[] { fileToolStripMenuItem, helpToolStripMenuItem, aboutToolStripMenuItem });
+            menuStrip1.Location = new Point(0, 0);
             menuStrip1.Name = "menuStrip1";
-            menuStrip1.Size = new System.Drawing.Size(867, 28);
+            menuStrip1.Size = new Size(867, 28);
             menuStrip1.TabIndex = 4;
             menuStrip1.Text = "menuStrip1";
             // 
             // fileToolStripMenuItem
             // 
-            fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] { addThaiWordToolStripMenuItem, convertTheMergedToJSONToolStripMenuItem, watchRelationshipGraphToolStripMenuItem, searchToolStripMenuItem, exitToolStripMenuItem });
+            fileToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { addThaiWordToolStripMenuItem, convertTheMergedToJSONToolStripMenuItem, watchRelationshipGraphToolStripMenuItem, searchToolStripMenuItem, exitToolStripMenuItem });
             fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            fileToolStripMenuItem.Size = new System.Drawing.Size(100, 24);
+            fileToolStripMenuItem.Size = new Size(100, 24);
             fileToolStripMenuItem.Text = "Application";
             // 
             // addThaiWordToolStripMenuItem
             // 
             addThaiWordToolStripMenuItem.Name = "addThaiWordToolStripMenuItem";
-            addThaiWordToolStripMenuItem.Size = new System.Drawing.Size(299, 26);
+            addThaiWordToolStripMenuItem.Size = new Size(299, 26);
             addThaiWordToolStripMenuItem.Text = "1. Add Thai Word";
             addThaiWordToolStripMenuItem.Click += btAddThaiToWordNet_Click;
             // 
             // convertTheMergedToJSONToolStripMenuItem
             // 
             convertTheMergedToJSONToolStripMenuItem.Name = "convertTheMergedToJSONToolStripMenuItem";
-            convertTheMergedToJSONToolStripMenuItem.Size = new System.Drawing.Size(299, 26);
+            convertTheMergedToJSONToolStripMenuItem.Size = new Size(299, 26);
             convertTheMergedToJSONToolStripMenuItem.Text = "2. Convert The Merged to JSON";
             convertTheMergedToJSONToolStripMenuItem.Click += btConvertToJson_Click;
             // 
             // watchRelationshipGraphToolStripMenuItem
             // 
             watchRelationshipGraphToolStripMenuItem.Name = "watchRelationshipGraphToolStripMenuItem";
-            watchRelationshipGraphToolStripMenuItem.Size = new System.Drawing.Size(299, 26);
+            watchRelationshipGraphToolStripMenuItem.Size = new Size(299, 26);
             watchRelationshipGraphToolStripMenuItem.Text = "3. Watch Relationship Graph";
             watchRelationshipGraphToolStripMenuItem.Click += btWatchGraph_Click;
             // 
             // searchToolStripMenuItem
             // 
             searchToolStripMenuItem.Name = "searchToolStripMenuItem";
-            searchToolStripMenuItem.Size = new System.Drawing.Size(299, 26);
+            searchToolStripMenuItem.Size = new Size(299, 26);
             searchToolStripMenuItem.Text = "4. Search";
             searchToolStripMenuItem.Click += btSearchData_Click;
             // 
             // exitToolStripMenuItem
             // 
             exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            exitToolStripMenuItem.Size = new System.Drawing.Size(299, 26);
+            exitToolStripMenuItem.Size = new Size(299, 26);
             exitToolStripMenuItem.Text = "Exit";
             exitToolStripMenuItem.Click += exitToolStripMenuItem_Click;
             // 
             // helpToolStripMenuItem
             // 
             helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-            helpToolStripMenuItem.Size = new System.Drawing.Size(55, 24);
+            helpToolStripMenuItem.Size = new Size(55, 24);
             helpToolStripMenuItem.Text = "Help";
             // 
             // aboutToolStripMenuItem
             // 
             aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            aboutToolStripMenuItem.Size = new System.Drawing.Size(64, 24);
+            aboutToolStripMenuItem.Size = new Size(64, 24);
             aboutToolStripMenuItem.Text = "About";
             // 
             // gbApplication
@@ -149,18 +149,27 @@
             gbApplication.Controls.Add(btSearchData);
             gbApplication.Controls.Add(btConvertToJson);
             gbApplication.Controls.Add(btWatchGraph);
-            gbApplication.Location = new System.Drawing.Point(138, 144);
+            gbApplication.Location = new Point(138, 144);
             gbApplication.Name = "gbApplication";
-            gbApplication.Size = new System.Drawing.Size(577, 293);
+            gbApplication.Size = new Size(577, 293);
             gbApplication.TabIndex = 5;
             gbApplication.TabStop = false;
             gbApplication.Text = "Application";
             // 
+            // button1
+            // 
+            button1.Location = new Point(136, 219);
+            button1.Name = "button1";
+            button1.Size = new Size(288, 29);
+            button1.TabIndex = 8;
+            button1.Text = "5. Thai Sentence Analyzer";
+            button1.UseVisualStyleBackColor = true;
+            // 
             // btAddThaiToWordNet
             // 
-            btAddThaiToWordNet.Location = new System.Drawing.Point(136, 79);
+            btAddThaiToWordNet.Location = new Point(136, 79);
             btAddThaiToWordNet.Name = "btAddThaiToWordNet";
-            btAddThaiToWordNet.Size = new System.Drawing.Size(288, 29);
+            btAddThaiToWordNet.Size = new Size(288, 29);
             btAddThaiToWordNet.TabIndex = 7;
             btAddThaiToWordNet.Text = "1. Add Thai to WordNet";
             btAddThaiToWordNet.UseVisualStyleBackColor = true;
@@ -169,33 +178,25 @@
             // Title
             // 
             Title.AutoSize = true;
-            Title.Font = new System.Drawing.Font("Sans Serif Collection", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, 0);
-            Title.Location = new System.Drawing.Point(125, 89);
+            Title.Font = new Font("Sans Serif Collection", 13.8F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            Title.Location = new Point(125, 89);
             Title.Name = "Title";
-            Title.Size = new System.Drawing.Size(301, 78);
+            Title.Size = new Size(301, 78);
             Title.TabIndex = 6;
             Title.Text = "Taxonomy of Thai Word";
             // 
-            // button1
-            // 
-            button1.Location = new System.Drawing.Point(136, 219);
-            button1.Name = "button1";
-            button1.Size = new System.Drawing.Size(288, 29);
-            button1.TabIndex = 8;
-            button1.Text = "5. Thai Sentence Analyzer";
-            button1.UseVisualStyleBackColor = true;
-            // 
             // MainMenu
             // 
-            AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
-            AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            ClientSize = new System.Drawing.Size(867, 483);
+            AutoScaleDimensions = new SizeF(8F, 20F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(867, 483);
             Controls.Add(gbApplication);
             Controls.Add(menuStrip1);
             Controls.Add(Title);
             MainMenuStrip = menuStrip1;
             Name = "MainMenu";
             Text = "MainMenu";
+            Load += MainMenu_Load;
             menuStrip1.ResumeLayout(false);
             menuStrip1.PerformLayout();
             gbApplication.ResumeLayout(false);

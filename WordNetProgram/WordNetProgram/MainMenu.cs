@@ -50,5 +50,10 @@ namespace WordNetProgram
             var searchDataForm = new SearchData();
             searchDataForm.ShowDialog();
         }
+
+        private void MainMenu_Load(object sender, EventArgs e)
+        {
+
+        }
     }
 }
