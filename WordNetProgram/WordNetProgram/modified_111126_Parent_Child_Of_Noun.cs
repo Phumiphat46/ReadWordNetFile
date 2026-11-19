@@ -44,8 +44,8 @@ namespace WordNetProgram
         private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\can_enter_hierarchy_number_parent_child_backend5.py";
         //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Inputs_of_Merge_Program\No_Gemini_Merged_Thai_Noun.json";
         //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\Test_Case_Mammal_to_Offspring_of_Working_dog.noun.json";
-        private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\Test_Case_Whole_to_Watch_dog.json";
-        //private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Noun.json");
+        //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\Test_Case_Whole_to_Watch_dog.json";
+        private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Noun.json");
 
         public modified_111126_Parent_Child_Of_Noun()
         {
