@@ -1,3 +1,4 @@
+import base64
 import json
 import graphviz
 import os
@@ -13,32 +14,32 @@ def load_json_data(filename):
 # Retrieves a list of ALL matching synsets to handle polysemy
 def find_target_synsets(data_dict, query):
     matches = []
-    
+
     # Clean extra spaces and create underscore versions (e.g., "hot dog" -> "hot_dog")
     query_clean = " ".join(query.strip().split())
     query_underscore = query_clean.replace(" ", "_")
-    
+
     query_lower = query_clean.lower()
     query_underscore_lower = query_underscore.lower()
-    
+
     for entry in data_dict.values():
         # 1. Match by exact offset
         if entry["Offset"] == query_clean:
             matches.append(entry)
             continue
-            
+
         # 2. Match English words (checks both "hot dog" and "hot_dog" case-insensitively)
         eng_words_lower = [w.lower() for w in entry.get("Words", [])]
         if query_lower in eng_words_lower or query_underscore_lower in eng_words_lower:
             matches.append(entry)
             continue
-            
+
         # 3. Match Thai words (checks both with space and with underscore)
         thai_words = entry.get("ThaiWords", [])
         if query_clean in thai_words or query_underscore in thai_words:
             matches.append(entry)
             continue
-            
+
     return matches
 
 # Builds a multi-line string containing all Thai words, English word, and Source
@@ -54,7 +55,7 @@ def get_node_label(data_dict, offset):
         english_word = entry.get("Words", ["unknown"])[0]
         thai_words = entry.get("ThaiWords", [])
         source = entry.get("ThaiWordsSource", "")
-        
+
         if thai_words:
             # Join all Thai words for this specific taxonomy view
             thai_display = ", ".join(thai_words)
@@ -64,7 +65,7 @@ def get_node_label(data_dict, offset):
             return label
         else:
             return f"{offset}: {english_word}"
-            
+
     # Fallback if the offset is completely missing from the JSON
     return f"{offset}: unknown"
 
@@ -80,7 +81,7 @@ def format_synset_link(data_dict, target_offset):
             word_part = eng_list[0].replace(" ", "_")
     else:
         word_part = "unknown"
-        
+
     return f"{target_offset}-{word_part}"
 
 # Builds a pipe-delimited string with both button text and full details for C#
@@ -90,32 +91,34 @@ def get_synset_payload(data_dict, offset):
         words_list = entry.get("Words", ["unknown"])
         first_eng = words_list[0]
         all_eng = ", ".join(words_list)
-        
+
         thai_words = entry.get("ThaiWords", [])
         thai_display = ", ".join(thai_words) if thai_words else "-"
-        
+
         if thai_words:
             btn_text = f"{offset}: {thai_display} ({first_eng})"
         else:
             btn_text = f"{offset}: ({first_eng})"
-            
+
         source = entry.get("ThaiWordsSource", "-") or "-"
         gloss = entry.get("Gloss", "No gloss available").replace("\n", " ").replace("|", "/")
-        
+
         # Format immediate parents (Hypernyms) and children (Hyponyms) with Thai words and links
         hyper_ids = [h["Target"] for h in entry.get("Hypernyms", [])]
         hypo_ids = [h["Target"] for h in entry.get("Hyponyms", [])]
-        
+
         hyper_links = [format_synset_link(data_dict, h_id) for h_id in hyper_ids]
         hypo_links = [format_synset_link(data_dict, h_id) for h_id in hypo_ids]
-        
+
         hyper_str = ", ".join(hyper_links) if hyper_links else "None"
         hypo_str = f"{len(hypo_links)} synset(s)" + (f" ({', '.join(hypo_links)})" if hypo_links else "")
-        
+
         return f"{offset}|{btn_text}|{all_eng}|{thai_display}|{source}|{gloss}|{hyper_str}|{hypo_str}"
     return f"{offset}|{offset}: unknown|unknown|-|-|No details available|None|0"
 
-# Recursive helper to traverse downward (Hyponyms) up to max_depth levels
+# ==========================================
+# LEGACY FILTER (tpFilter) TRAVERSAL HELPERS
+# ==========================================
 def traverse_downward(data_dict, current_offset, edges, current_depth, max_depth, level_limits, visited_down):
     if current_depth > max_depth or (current_offset, current_depth) in visited_down:
         return
@@ -141,7 +144,6 @@ def traverse_downward(data_dict, current_offset, edges, current_depth, max_depth
         edges.add((current_offset, child_offset))
         traverse_downward(data_dict, child_offset, edges, current_depth + 1, max_depth, level_limits, visited_down)
 
-# Recursive helper to traverse upward (Hypernyms) up to max_depth levels, plus lateral branches
 def traverse_upward(data_dict, current_offset, edges, current_depth, max_depth, lateral_limits, visited_up):
     if current_depth > max_depth or (current_offset, current_depth) in visited_up:
         return
@@ -203,18 +205,13 @@ def build_family_tree_edges(
     if not target_entry:
         return
 
-    # If tbHierarchy is specified (> 0), use it as the number of levels up and down.
-    # Otherwise, default to 3 levels up and 3 levels down.
-    if hierarchy_level is not None and hierarchy_level > 0:
+    if hierarchy_level is not None and hierarchy_level >= 0:
         max_up_levels = hierarchy_level
         max_down_levels = hierarchy_level
     else:
-        max_up_levels = 3
-        max_down_levels = 3
+        max_up_levels = 0
+        max_down_levels = 0
 
-    # Map downward limits per depth level
-    # When hierarchy_level is explicitly entered by the user and a downward textbox is left blank (0),
-    # allow that level to expand (None = unlimited) so all N levels of descendants are shown.
     down_limits = {
         1: max_children,
         2: max_grandchildren,
@@ -232,6 +229,107 @@ def build_family_tree_edges(
 
     visited_up = set()
     traverse_upward(data_dict, target_offset, edges, 1, max_up_levels, lateral_limits, visited_up)
+
+# ==========================================
+# NEW FILTER (tpNewFilter) TRAVERSAL HELPERS
+# ==========================================
+def traverse_lateral_downward(data_dict, current_offset, edges, remaining_depth, visited):
+    if remaining_depth <= 0 or (current_offset, remaining_depth) in visited:
+        return
+    visited.add((current_offset, remaining_depth))
+
+    entry = data_dict.get(current_offset)
+    if not entry:
+        return
+
+    for child_hyp in entry.get("Hyponyms", []):
+        child_offset = child_hyp["Target"]
+        edges.add((current_offset, child_offset))
+        traverse_lateral_downward(data_dict, child_offset, edges, remaining_depth - 1, visited)
+
+def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_depth, desc_cfg, visited_down):
+    if current_depth > max_depth or (current_offset, current_depth) in visited_down:
+        return
+    visited_down.add((current_offset, current_depth))
+
+    entry = data_dict.get(current_offset)
+    if not entry:
+        return
+
+    cfg = desc_cfg.get(str(current_depth), {})
+    if not cfg.get("show_other_children", True):
+        return
+
+    hyponyms = entry.get("Hyponyms", [])
+    limit = cfg.get("other_children", None)
+
+    if limit is not None and len(hyponyms) > limit:
+        shown_hyps = hyponyms[:limit]
+        remaining = len(hyponyms) - limit
+        if remaining > 0:
+            edges.add((current_offset, f"OTHERS_{current_offset}_{remaining}"))
+    else:
+        shown_hyps = hyponyms
+
+    for hyp in shown_hyps:
+        child_offset = hyp["Target"]
+        edges.add((current_offset, child_offset))
+        traverse_downward_new(data_dict, child_offset, edges, current_depth + 1, max_depth, desc_cfg, visited_down)
+
+def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_depth, anc_cfg, visited_up, visited_lat):
+    if current_depth > max_depth or (current_offset, current_depth) in visited_up:
+        return
+    visited_up.add((current_offset, current_depth))
+
+    entry = data_dict.get(current_offset)
+    if not entry:
+        return
+
+    cfg = anc_cfg.get(str(current_depth), {})
+    show_other = cfg.get("show_other_children", True)
+    other_limit = cfg.get("other_children", None)
+    lateral_depth = cfg.get("depth", 0) or 0
+
+    for parent_hyp in entry.get("Hypernyms", []):
+        parent_offset = parent_hyp["Target"]
+        edges.add((parent_offset, current_offset))
+
+        parent_entry = data_dict.get(parent_offset)
+        if parent_entry:
+            if show_other:
+                all_sibs = parent_entry.get("Hyponyms", [])
+                actual_sibs = [h for h in all_sibs if h["Target"] != current_offset]
+
+                if other_limit is not None and len(actual_sibs) > other_limit:
+                    shown_sibs = actual_sibs[:other_limit]
+                    rem_sibs = len(actual_sibs) - other_limit
+                    if rem_sibs > 0:
+                        edges.add((parent_offset, f"OTHERS_{parent_offset}_{rem_sibs}"))
+                else:
+                    shown_sibs = actual_sibs
+
+                for sib_hyp in shown_sibs:
+                    sib_offset = sib_hyp["Target"]
+                    edges.add((parent_offset, sib_offset))
+
+                    if lateral_depth > 0:
+                        traverse_lateral_downward(data_dict, sib_offset, edges, lateral_depth, visited_lat)
+
+            traverse_upward_new(data_dict, parent_offset, edges, current_depth + 1, max_depth, anc_cfg, visited_up, visited_lat)
+
+def build_family_tree_edges_new_filter(data_dict, target_offset, edges, config):
+    if not data_dict.get(target_offset):
+        return
+
+    hierarchy_level = config.get("hierarchy", 0)
+    if hierarchy_level < 0:
+        hierarchy_level = 0
+
+    anc_cfg = config.get("ancestors", {})
+    desc_cfg = config.get("descendants", {})
+
+    traverse_downward_new(data_dict, target_offset, edges, 1, hierarchy_level, desc_cfg, set())
+    traverse_upward_new(data_dict, target_offset, edges, 1, hierarchy_level, anc_cfg, set(), set())
 
 def parse_limit(arg):
     try:
@@ -265,7 +363,7 @@ def main():
     if not target_synsets:
         print(f"ERROR: Could not find '{query}' in the dataset.")
         sys.exit(1)
-        
+
     # === POLYSEMY CHECK ===
     if len(target_synsets) > 1:
         exact_match = [s for s in target_synsets if s["Offset"] == query]
@@ -285,33 +383,43 @@ def main():
         target_synset = target_synsets[0]
 
     target_offset = target_synset["Offset"]
-
-    max_children = parse_limit(sys.argv[3]) if len(sys.argv) > 3 else None
-    max_grandchildren = parse_limit(sys.argv[4]) if len(sys.argv) > 4 else None
-    max_great_grandchildren = parse_limit(sys.argv[5]) if len(sys.argv) > 5 else None
-    max_siblings = parse_limit(sys.argv[6]) if len(sys.argv) > 6 else None
-    max_nephews = parse_limit(sys.argv[7]) if len(sys.argv) > 7 else None
-    max_uncles = parse_limit(sys.argv[8]) if len(sys.argv) > 8 else None
-    max_cousins = parse_limit(sys.argv[9]) if len(sys.argv) > 9 else None
-    max_great_uncles = parse_limit(sys.argv[10]) if len(sys.argv) > 10 else None
-    max_first_cousins_once_removed = parse_limit(sys.argv[11]) if len(sys.argv) > 11 else None
-    hierarchy_level = parse_limit(sys.argv[12]) if len(sys.argv) > 12 else None
-    
     edges = set()
-    build_family_tree_edges(
-        data_dict, target_offset, edges,
-        max_children, max_grandchildren, max_great_grandchildren,
-        max_siblings, max_nephews, max_uncles, max_cousins,
-        max_great_uncles, max_first_cousins_once_removed,
-        hierarchy_level
-    )
+
+    if len(sys.argv) >= 5 and sys.argv[3] == "--new-filter":
+        try:
+            config_json = base64.b64decode(sys.argv[4]).decode("utf-8")
+            new_filter_config = json.loads(config_json)
+        except Exception as e:
+            print(f"ERROR: Invalid new-filter config. {e}")
+            sys.exit(1)
+
+        build_family_tree_edges_new_filter(data_dict, target_offset, edges, new_filter_config)
+    else:
+        max_children = parse_limit(sys.argv[3]) if len(sys.argv) > 3 else None
+        max_grandchildren = parse_limit(sys.argv[4]) if len(sys.argv) > 4 else None
+        max_great_grandchildren = parse_limit(sys.argv[5]) if len(sys.argv) > 5 else None
+        max_siblings = parse_limit(sys.argv[6]) if len(sys.argv) > 6 else None
+        max_nephews = parse_limit(sys.argv[7]) if len(sys.argv) > 7 else None
+        max_uncles = parse_limit(sys.argv[8]) if len(sys.argv) > 8 else None
+        max_cousins = parse_limit(sys.argv[9]) if len(sys.argv) > 9 else None
+        max_great_uncles = parse_limit(sys.argv[10]) if len(sys.argv) > 10 else None
+        max_first_cousins_once_removed = parse_limit(sys.argv[11]) if len(sys.argv) > 11 else None
+        hierarchy_level = parse_limit(sys.argv[12]) if len(sys.argv) > 12 else None
+
+        build_family_tree_edges(
+            data_dict, target_offset, edges,
+            max_children, max_grandchildren, max_great_grandchildren,
+            max_siblings, max_nephews, max_uncles, max_cousins,
+            max_great_uncles, max_first_cousins_once_removed,
+            hierarchy_level
+        )
 
     dot = graphviz.Digraph(name="Tree")
     dot.attr('node', shape='box', fontname='Tahoma', style='round,filled', fillcolor='#F9F9F9')
     dot.attr('edge', fontname='Tahoma', color='#555555')
-    
+
     all_nodes = set()
-    all_nodes.add(target_offset) 
+    all_nodes.add(target_offset)
     for parent_offset, child_offset in edges:
         all_nodes.add(parent_offset)
         all_nodes.add(child_offset)
@@ -322,9 +430,9 @@ def main():
             dot.body.append(f'\t"{node_id}" [label="{label}" fillcolor="#FFE0B2" penwidth=2]')
         else:
             dot.body.append(f'\t"{node_id}" [label="{label}"]')
-    
+
     sorted_edges = sorted(list(edges), key=lambda x: (str(x[0]), str(x[1])), reverse=True)
-    
+
     for parent_offset, child_offset in sorted_edges:
         dot.body.append(f'\t"{parent_offset}" -> "{child_offset}"')
 
@@ -337,12 +445,12 @@ def main():
     try:
         dot.render(output_filename, format="svg", view=False)
         output_path = os.path.abspath(output_filename + ".svg")
-        
+
         print("SYNSETS_START")
         for synset_id in ordered_synsets:
             print(get_synset_payload(data_dict, synset_id))
         print("SYNSETS_END")
-        
+
         print(f"SUCCESS:{output_path}")
     except Exception as e:
         print(f"ERROR: Graphviz rendering failed. {e}")

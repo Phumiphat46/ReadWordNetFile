@@ -568,6 +568,11 @@
         "Target": "01471682",
         "POS": "n",
         "SourceTarget": "0000"
+      },
+	  {
+        "Target": "01468238",
+        "POS": "n",
+        "SourceTarget": "0000"
       }
     ],
     "InstanceHypernyms": [],
@@ -711,6 +716,53 @@
         "SourceTarget": "0000"
       }
     ],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "01468238",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "tunicate",
+      "urochordate",
+      "urochord"
+    ],
+    "Gloss": "primitive marine animal having a saclike unsegmented body and a urochord that is conspicuous in the larva",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "ยูโรคอร์ด"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "01466257",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01467986",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
     "MemberDomainRegion": [],
     "MemberDomainUsage": []
   },

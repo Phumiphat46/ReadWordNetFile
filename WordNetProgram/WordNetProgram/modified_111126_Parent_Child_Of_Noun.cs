@@ -38,14 +38,24 @@ namespace WordNetProgram
         private Panel pnlEntityDetails = null;
         private RichTextBox rtbEntityDetails = null;
 
+        // ==========================================
+        // NEW FILTER TAB (tpNewFilter) CONTROLS
+        // ==========================================
+        private FlowLayoutPanel pnlNewFilterMainFlow = null;
+        private FlowLayoutPanel pnlNewFilterSections = null;
+        private Panel pnlNewFilterApply = null;
+        private readonly List<DropdownSection> newFilterDropdownSections = new List<DropdownSection>();
+        private int currentNewHierarchyCount = 0;
+        private const int MaxNewHierarchy = 20;
+
         // Define paths (Use backend4.py if you want SVG-only generation without the 10-node limit)
         //private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\backend5.py";
         // default backend path private string pythonScript = System.IO.Path.Combine(AppContext.BaseDirectory, "parent_child_backend5.py");
         private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\can_enter_hierarchy_number_parent_child_backend5.py";
         //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Inputs_of_Merge_Program\No_Gemini_Merged_Thai_Noun.json";
         //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\Test_Case_Mammal_to_Offspring_of_Working_dog.noun.json";
-        //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\Test_Case_Whole_to_Watch_dog.json";
-        private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Noun.json");
+        private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\Test_Case_Whole_to_Watch_dog.json";
+        //private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Noun.json");
 
         public modified_111126_Parent_Child_Of_Noun()
         {
@@ -61,18 +71,629 @@ namespace WordNetProgram
             // Initialize the split layout inside tpEntities (Buttons List on top, Details Panel at bottom)
             InitializeEntitiesTabLayout();
 
+            // Initialize the dynamic nested dropdown area inside tpNewFilter below tbNewHierarchy
+            InitializeNewFilterTabLayout();
+
             // Enable pressing 'F' for Full Screen
             this.KeyPreview = true;
             this.KeyDown += modified_111126_Parent_Child_Of_Noun_KeyDown;
+            this.FormClosed += (s, e) => DisposeNewFilterDropdowns();
         }
 
+        // ==========================================
+        // NEW FILTER TAB (tpNewFilter) LOGIC
+        // ==========================================
+        private void InitializeNewFilterTabLayout()
+        {
+            if (pnlNewFilterMainFlow != null) return;
+
+            // Wire validation and Enter-key handling to tbNewHierarchy
+            tbNewHierarchy.KeyPress += TbNewHierarchy_KeyPress;
+            tbNewHierarchy.KeyDown += TbNewHierarchy_KeyDown;
+
+            // Position the scrollable container below any existing Designer controls in tpNewFilter
+            int topOffset = 10;
+            foreach (Control ctrl in tpNewFilter.Controls)
+            {
+                if (ctrl.Bottom + 10 > topOffset)
+                {
+                    topOffset = ctrl.Bottom + 10;
+                }
+            }
+
+            Panel topDivider = new Panel
+            {
+                Location = new Point(0, topOffset - 2),
+                Size = new Size(tpNewFilter.ClientSize.Width, 1),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                BackColor = Color.FromArgb(225, 225, 225)
+            };
+
+            pnlNewFilterMainFlow = new FlowLayoutPanel
+            {
+                Location = new Point(0, topOffset),
+                Size = new Size(tpNewFilter.ClientSize.Width, Math.Max(120, tpNewFilter.ClientSize.Height - topOffset)),
+                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                AutoScroll = true,
+                Padding = new Padding(8),
+                BackColor = Color.White
+            };
+
+            pnlNewFilterSections = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                AutoSize = true,
+                Margin = new Padding(0),
+                Padding = new Padding(0)
+            };
+            pnlNewFilterMainFlow.Controls.Add(pnlNewFilterSections);
+
+            pnlNewFilterApply = new Panel
+            {
+                Size = new Size(340, 48),
+                Padding = new Padding(16, 10, 10, 0),
+                Visible = false
+            };
+
+            Button btnApplyNewFilter = new Button
+            {
+                Text = "Apply",
+                Location = new Point(16, 10),
+                Size = new Size(100, 30),
+                BackColor = Color.FromArgb(30, 30, 30),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Cursor = Cursors.Hand
+            };
+            btnApplyNewFilter.Click += BtnApplyNewFilter_Click;
+            pnlNewFilterApply.Controls.Add(btnApplyNewFilter);
+            pnlNewFilterMainFlow.Controls.Add(pnlNewFilterApply);
+
+            tpNewFilter.Controls.Add(topDivider);
+            tpNewFilter.Controls.Add(pnlNewFilterMainFlow);
+        }
+
+        // Allow only digits and control keys (e.g., Backspace) in tbNewHierarchy
+        private void TbNewHierarchy_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true;
+            }
+        }
+
+        // Pressing Enter in tbNewHierarchy creates the nested dropdowns AND generates the graph if a word is entered
+        private async void TbNewHierarchy_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true;
+
+                if (!TrySyncNewFilterDropdownsFromInput(out _, forceRegenerate: true))
+                    return;
+
+                string query = tbSynsetWord.Text.Trim();
+                if (!string.IsNullOrEmpty(query))
+                {
+                    btGenGraph.Enabled = false;
+                    this.Cursor = Cursors.WaitCursor;
+
+                    await RunPythonBackendAsync(query);
+
+                    btGenGraph.Enabled = true;
+                    this.Cursor = Cursors.Default;
+                }
+            }
+        }
+
+        private bool TrySyncNewFilterDropdownsFromInput(out int? newHierarchyLevel, bool forceRegenerate = false)
+        {
+            InitializeNewFilterTabLayout();
+            string rawText = tbNewHierarchy.Text.Trim();
+
+            if (string.IsNullOrEmpty(rawText))
+            {
+                if (currentNewHierarchyCount != 0)
+                {
+                    GenerateNewFilterDropdowns(0);
+                }
+                newHierarchyLevel = null;
+                return true;
+            }
+
+            if (int.TryParse(rawText, out int count) && count >= 0 && count <= MaxNewHierarchy)
+            {
+                if (forceRegenerate || count != currentNewHierarchyCount)
+                {
+                    GenerateNewFilterDropdowns(count);
+                }
+                newHierarchyLevel = count;
+                return true;
+            }
+
+            MessageBox.Show(
+                $"Please enter a valid number between 0 and {MaxNewHierarchy} in New Hierarchy.",
+                "Invalid Input",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+            );
+            tbNewHierarchy.Focus();
+            tbNewHierarchy.SelectAll();
+
+            newHierarchyLevel = null;
+            return false;
+        }
+
+        private void DisposeNewFilterDropdowns()
+        {
+            foreach (var section in newFilterDropdownSections)
+            {
+                section.Dispose();
+            }
+            newFilterDropdownSections.Clear();
+        }
+
+        private void GenerateNewFilterDropdowns(int count)
+        {
+            InitializeNewFilterTabLayout();
+            pnlNewFilterSections.SuspendLayout();
+
+            DisposeNewFilterDropdowns();
+
+            while (pnlNewFilterSections.Controls.Count > 0)
+            {
+                Control ctrl = pnlNewFilterSections.Controls[0];
+                pnlNewFilterSections.Controls.RemoveAt(0);
+                ctrl.Dispose();
+            }
+
+            currentNewHierarchyCount = count;
+
+            if (count > 0)
+            {
+                int sectionWidth = Math.Max(320, pnlNewFilterMainFlow.ClientSize.Width - 28);
+
+                // 1. Ancestors in descending order: Nth Ancestor -> ... -> 1st Ancestor
+                for (int i = count; i >= 1; i--)
+                {
+                    string title = $"{GetOrdinal(i)} Ancestor";
+                    DropdownSection section = CreateDropdownSection(title, true, i, sectionWidth);
+                    newFilterDropdownSections.Add(section);
+
+                    pnlNewFilterSections.Controls.Add(section.HeaderPanel);
+                    pnlNewFilterSections.Controls.Add(section.ContentPanel);
+                }
+
+                // Visual gap between Ancestors and Descendants
+                Panel groupSpacer = new Panel
+                {
+                    Size = new Size(sectionWidth, 16),
+                    BackColor = Color.White,
+                    Margin = new Padding(0)
+                };
+                pnlNewFilterSections.Controls.Add(groupSpacer);
+
+                // 2. Descendants in ascending order: 1st Descendant -> ... -> Nth Descendant
+                for (int i = 1; i <= count; i++)
+                {
+                    string title = $"{GetOrdinal(i)} Descendant";
+                    DropdownSection section = CreateDropdownSection(title, false, i, sectionWidth);
+                    newFilterDropdownSections.Add(section);
+
+                    pnlNewFilterSections.Controls.Add(section.HeaderPanel);
+                    pnlNewFilterSections.Controls.Add(section.ContentPanel);
+                }
+            }
+
+            pnlNewFilterApply.Visible = count > 0;
+            pnlNewFilterSections.ResumeLayout(true);
+        }
+
+        private DropdownSection CreateDropdownSection(string title, bool isAncestor, int level, int rowWidth)
+        {
+            var section = new DropdownSection
+            {
+                Title = title,
+                IsAncestor = isAncestor,
+                Level = level
+            };
+
+            // Content container
+            section.ContentPanel = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                AutoSize = true,
+                Margin = new Padding(0, 0, 0, 6),
+                Padding = new Padding(0)
+            };
+
+            // Header
+            section.HeaderPanel = CreateHeaderRow(title, 0, rowWidth, out Label chevron, () =>
+            {
+                ToggleSection(section.ContentPanel, section.ChevronLabel);
+            });
+            section.ChevronLabel = chevron;
+
+            // Row 1: Other Children TextBox
+            section.ContentPanel.Controls.Add(
+                CreateTextBoxRow("Other Children:", rowWidth, out CheckBox chkOtherChildren, out TextBox txtOtherChildren));
+            section.ChkOtherChildren = chkOtherChildren;
+            section.TxtOtherChildren = txtOtherChildren;
+
+            // Row 2: Depth TextBox
+            section.ContentPanel.Controls.Add(
+                CreateTextBoxRow("Depth:", rowWidth, out CheckBox chkDepth, out TextBox txtDepth));
+            section.ChkDepth = chkDepth;
+            section.TxtDepth = txtDepth;
+
+            // Row 3: 1-20 Multi-Select Dropdown
+            section.ContentPanel.Controls.Add(CreateRangeDropdownRow(section, rowWidth));
+
+            return section;
+        }
+
+        private Panel CreateHeaderRow(string title, int indentLeft, int rowWidth, out Label chevronLabel, Action onClick)
+        {
+            Panel row = new Panel
+            {
+                Size = new Size(rowWidth, 38),
+                BackColor = Color.White,
+                Cursor = Cursors.Hand,
+                Margin = new Padding(0)
+            };
+
+            Label lblIcon = new Label
+            {
+                Text = "−",
+                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+                BackColor = Color.FromArgb(30, 30, 30),
+                ForeColor = Color.White,
+                TextAlign = ContentAlignment.MiddleCenter,
+                Size = new Size(18, 18),
+                Location = new Point(indentLeft + 6, 10)
+            };
+
+            Label lblTitle = new Label
+            {
+                Text = title,
+                AutoSize = true,
+                Location = new Point(indentLeft + 32, 9),
+                ForeColor = Color.FromArgb(50, 50, 50),
+                Font = new Font("Segoe UI", 9.5f)
+            };
+
+            Label chevron = new Label
+            {
+                Text = "▲",
+                AutoSize = true,
+                Location = new Point(rowWidth - 24, 10),
+                ForeColor = Color.Gray,
+                Font = new Font("Segoe UI", 8f)
+            };
+            chevronLabel = chevron;
+
+            Panel divider = new Panel
+            {
+                Height = 1,
+                Width = rowWidth - indentLeft,
+                Location = new Point(indentLeft, 37),
+                BackColor = Color.FromArgb(230, 230, 230)
+            };
+
+            EventHandler clickHandler = (s, e) => onClick?.Invoke();
+            row.Click += clickHandler;
+            lblIcon.Click += clickHandler;
+            lblTitle.Click += clickHandler;
+            chevron.Click += clickHandler;
+
+            row.Controls.AddRange(new Control[] { lblIcon, lblTitle, chevron, divider });
+            return row;
+        }
+
+        private void ToggleSection(Control contentPanel, Label chevron)
+        {
+            contentPanel.Visible = !contentPanel.Visible;
+            chevron.Text = contentPanel.Visible ? "▲" : "▼";
+        }
+
+        private int GetFilterLabelColumnWidth(Font font)
+        {
+            // Measures the exact rendered pixel width at the current Windows DPI
+            // plus room for the checkbox square and padding
+            int textWidth = TextRenderer.MeasureText("Other Children:", font).Width;
+            return textWidth + 32;
+        }
+
+        private Panel CreateTextBoxRow(string labelText, int rowWidth, out CheckBox checkBox, out TextBox textBox)
+        {
+            Font rowFont = new Font("Segoe UI", 9f);
+            int labelWidth = GetFilterLabelColumnWidth(rowFont);
+            int inputLeft = 20 + labelWidth + 6;
+            int inputWidth = Math.Max(100, rowWidth - inputLeft - 15);
+
+            Panel row = new Panel
+            {
+                Size = new Size(rowWidth, 40),
+                BackColor = Color.White,
+                Margin = new Padding(0)
+            };
+
+            CheckBox cb = new CheckBox
+            {
+                Text = labelText,
+                AutoSize = true,
+                Location = new Point(20, 10),
+                Checked = true,
+                Font = rowFont
+            };
+
+            TextBox tb = new TextBox
+            {
+                Location = new Point(inputLeft, 8),
+                Width = inputWidth,
+                Font = rowFont
+            };
+
+            cb.CheckedChanged += (s, e) => tb.Enabled = cb.Checked;
+
+            checkBox = cb;
+            textBox = tb;
+
+            row.Controls.Add(cb);
+            row.Controls.Add(tb);
+            return row;
+        }
+
+        private Panel CreateRangeDropdownRow(DropdownSection section, int rowWidth)
+        {
+            Font rowFont = new Font("Segoe UI", 9f);
+            int labelWidth = GetFilterLabelColumnWidth(rowFont);
+            int inputLeft = 20 + labelWidth + 6;
+            int inputWidth = Math.Max(100, rowWidth - inputLeft - 15);
+
+            Panel row = new Panel
+            {
+                Size = new Size(rowWidth, 42),
+                BackColor = Color.White,
+                Margin = new Padding(0)
+            };
+
+            section.ChkRange = new CheckBox
+            {
+                Text = "Select:",
+                AutoSize = true,
+                Location = new Point(20, 10),
+                Checked = true,
+                Font = rowFont
+            };
+
+            section.BtnRangeDropdown = new Button
+            {
+                Text = "Choose 1–20 ▼",
+                Location = new Point(inputLeft, 6),
+                Size = new Size(inputWidth, 28),
+                TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.White,
+                FlatStyle = FlatStyle.Standard,
+                Font = rowFont
+            };
+
+            section.ChkRange.CheckedChanged += (s, e) =>
+                section.BtnRangeDropdown.Enabled = section.ChkRange.Checked;
+
+            Panel popupPanel = new Panel
+            {
+                Size = new Size(inputWidth, 220),
+                BackColor = Color.White
+            };
+
+            section.ChkSelectAll = new CheckBox
+            {
+                Text = "Select / Unselect All",
+                Location = new Point(8, 6),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 9f, FontStyle.Bold)
+            };
+
+            section.ClbNumbers = new CheckedListBox
+            {
+                Location = new Point(4, 30),
+                Size = new Size(inputWidth - 8, 184),
+                CheckOnClick = true,
+                BorderStyle = BorderStyle.FixedSingle
+            };
+
+            for (int i = 1; i <= 20; i++)
+            {
+                section.ClbNumbers.Items.Add(i.ToString());
+            }
+
+            section.ChkSelectAll.CheckedChanged += (s, e) =>
+            {
+                if (section.IsUpdatingChecks) return;
+
+                section.IsUpdatingChecks = true;
+                for (int i = 0; i < section.ClbNumbers.Items.Count; i++)
+                {
+                    section.ClbNumbers.SetItemChecked(i, section.ChkSelectAll.Checked);
+                }
+                section.IsUpdatingChecks = false;
+
+                section.UpdateRangeButtonText();
+            };
+
+            section.ClbNumbers.ItemCheck += (s, e) =>
+            {
+                if (section.IsUpdatingChecks) return;
+
+                this.BeginInvoke((Action)(() =>
+                {
+                    section.IsUpdatingChecks = true;
+                    section.ChkSelectAll.Checked =
+                        (section.ClbNumbers.CheckedItems.Count == section.ClbNumbers.Items.Count);
+                    section.IsUpdatingChecks = false;
+
+                    section.UpdateRangeButtonText();
+                }));
+            };
+
+            popupPanel.Controls.Add(section.ChkSelectAll);
+            popupPanel.Controls.Add(section.ClbNumbers);
+
+            ToolStripControlHost host = new ToolStripControlHost(popupPanel)
+            {
+                Margin = Padding.Empty,
+                Padding = Padding.Empty,
+                AutoSize = false,
+                Size = popupPanel.Size
+            };
+
+            section.RangePopup = new ToolStripDropDown
+            {
+                Margin = Padding.Empty,
+                Padding = Padding.Empty,
+                AutoClose = true
+            };
+            section.RangePopup.Items.Add(host);
+
+            section.BtnRangeDropdown.Click += (s, e) =>
+            {
+                section.RangePopup.Show(
+                    section.BtnRangeDropdown,
+                    new Point(0, section.BtnRangeDropdown.Height));
+            };
+
+            row.Controls.Add(section.ChkRange);
+            row.Controls.Add(section.BtnRangeDropdown);
+            return row;
+        }
+
+        private string BuildNewFilterConfigBase64(int hierarchyLevel)
+        {
+            string FormatSectionJson(DropdownSection section)
+            {
+                bool showOther = section.ChkOtherChildren.Checked;
+                string otherChildrenVal = "null"; // Blank = unlimited (show all siblings/other children)
+                if (showOther && int.TryParse(section.TxtOtherChildren.Text.Trim(), out int parsedOther) && parsedOther >= 0)
+                {
+                    otherChildrenVal = parsedOther.ToString();
+                }
+
+                int depthVal = 0; // Blank or unchecked = 0 (do not expand lateral branches downward)
+                if (section.ChkDepth.Checked && int.TryParse(section.TxtDepth.Text.Trim(), out int parsedDepth) && parsedDepth >= 0)
+                {
+                    depthVal = parsedDepth;
+                }
+
+                return $"\"{section.Level}\":{{\"show_other_children\":{(showOther ? "true" : "false")},\"other_children\":{otherChildrenVal},\"depth\":{depthVal}}}";
+            }
+
+            var ancEntries = newFilterDropdownSections
+                .Where(s => s.IsAncestor)
+                .Select(FormatSectionJson);
+
+            var descEntries = newFilterDropdownSections
+                .Where(s => !s.IsAncestor)
+                .Select(FormatSectionJson);
+
+            string json = $"{{\"hierarchy\":{hierarchyLevel}," +
+                          $"\"ancestors\":{{{string.Join(",", ancEntries)}}}," +
+                          $"\"descendants\":{{{string.Join(",", descEntries)}}}}}";
+
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+        }
+
+        private async void BtnApplyNewFilter_Click(object sender, EventArgs e)
+        {
+            string query = tbSynsetWord.Text.Trim();
+            if (string.IsNullOrEmpty(query))
+            {
+                MessageBox.Show("Please enter an English word, Thai word, or Offset first.", "Input Required", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!TrySyncNewFilterDropdownsFromInput(out _))
+                return;
+
+            btGenGraph.Enabled = false;
+            this.Cursor = Cursors.WaitCursor;
+
+            await RunPythonBackendAsync(query);
+
+            btGenGraph.Enabled = true;
+            this.Cursor = Cursors.Default;
+        }
+
+        private static string GetOrdinal(int number)
+        {
+            int mod100 = number % 100;
+            if (mod100 >= 11 && mod100 <= 13)
+                return $"{number}th";
+
+            switch (number % 10)
+            {
+                case 1: return $"{number}st";
+                case 2: return $"{number}nd";
+                case 3: return $"{number}rd";
+                default: return $"{number}th";
+            }
+        }
+
+        private class DropdownSection : IDisposable
+        {
+            public string Title { get; set; }
+            public bool IsAncestor { get; set; }
+            public int Level { get; set; }
+
+            public Panel HeaderPanel { get; set; }
+            public Panel ContentPanel { get; set; }
+            public Label ChevronLabel { get; set; }
+
+            public CheckBox ChkOtherChildren { get; set; }
+            public TextBox TxtOtherChildren { get; set; }
+
+            public CheckBox ChkDepth { get; set; }
+            public TextBox TxtDepth { get; set; }
+
+            public CheckBox ChkRange { get; set; }
+            public Button BtnRangeDropdown { get; set; }
+            public ToolStripDropDown RangePopup { get; set; }
+            public CheckBox ChkSelectAll { get; set; }
+            public CheckedListBox ClbNumbers { get; set; }
+            public bool IsUpdatingChecks { get; set; }
+
+            public void UpdateRangeButtonText()
+            {
+                int count = ClbNumbers.CheckedItems.Count;
+                if (count == 0)
+                    BtnRangeDropdown.Text = "Choose 1–20 ▼";
+                else if (count == ClbNumbers.Items.Count)
+                    BtnRangeDropdown.Text = "All Selected (1–20) ▼";
+                else
+                    BtnRangeDropdown.Text = $"{count} Selected ▼";
+            }
+
+            public void Dispose()
+            {
+                RangePopup?.Dispose();
+                HeaderPanel?.Dispose();
+                ContentPanel?.Dispose();
+            }
+        }
+
+        // ==========================================
+        // ENTITIES TAB (tpEntities) LOGIC
+        // ==========================================
         private void InitializeEntitiesTabLayout()
         {
             if (pnlEntityButtons != null) return;
 
             tpEntities.Controls.Clear();
 
-            // Bottom panel: Details view (without the Regenerate button)
             pnlEntityDetails = new Panel
             {
                 Dock = DockStyle.Bottom,
@@ -98,18 +719,16 @@ namespace WordNetProgram
                 BackColor = Color.White,
                 BorderStyle = BorderStyle.None,
                 Font = new Font("Tahoma", 9.5f),
-                DetectUrls = false, // Turn off http:// requirement
+                DetectUrls = false,
                 Text = "Select any synset button above to inspect its full definition and lexical links."
             };
 
-            // Custom hyperlink hover (Hand cursor) and click handling without "http://"
             rtbEntityDetails.MouseMove += RtbEntityDetails_MouseMove;
             rtbEntityDetails.MouseDown += RtbEntityDetails_MouseDown;
 
             pnlEntityDetails.Controls.Add(rtbEntityDetails);
             pnlEntityDetails.Controls.Add(lblDetailsHeader);
 
-            // Top/Main panel: Scrollable container for synset buttons
             pnlEntityButtons = new Panel
             {
                 Dock = DockStyle.Fill,
@@ -121,19 +740,16 @@ namespace WordNetProgram
             tpEntities.Controls.Add(pnlEntityDetails);
         }
 
-        // Helper: Checks if the mouse is hovering over the top "Offset: 02084071" or any "02083346-สุนัข" link
         private string GetOffsetAtCursor(Point mouseLocation)
         {
             if (string.IsNullOrEmpty(rtbEntityDetails.Text)) return null;
 
             int charIndex = rtbEntityDetails.GetCharIndexFromPosition(mouseLocation);
 
-            // Ensure the mouse is actually near the character and not in empty white space
             Point charPos = rtbEntityDetails.GetPositionFromCharIndex(charIndex);
             if (Math.Abs(mouseLocation.X - charPos.X) > 20 || Math.Abs(mouseLocation.Y - charPos.Y) > 20)
                 return null;
 
-            // 1. Check if hovering over the main "Offset: 02084071" at the top
             Match offsetMatch = Regex.Match(rtbEntityDetails.Text, @"^Offset:\s*(\d{8})");
             if (offsetMatch.Success)
             {
@@ -145,7 +761,6 @@ namespace WordNetProgram
                 }
             }
 
-            // 2. Check if hovering over any "02083346-สุนัข" link in Hypernyms/Hyponyms
             int hyperStartIndex = rtbEntityDetails.Text.IndexOf("Hypernyms (Parents):");
             if (hyperStartIndex != -1 && charIndex >= hyperStartIndex)
             {
@@ -156,7 +771,7 @@ namespace WordNetProgram
                     int end = start + m.Length;
                     if (charIndex >= start && charIndex <= end)
                     {
-                        return m.Groups[1].Value; // Returns the 8-digit Offset (e.g., "02083346")
+                        return m.Groups[1].Value;
                     }
                 }
             }
@@ -184,6 +799,9 @@ namespace WordNetProgram
 
         private async Task TriggerGraphForOffsetAsync(string targetOffset)
         {
+            if (!TrySyncNewFilterDropdownsFromInput(out _))
+                return;
+
             tbSynsetWord.Text = targetOffset;
             btGenGraph.Enabled = false;
             this.Cursor = Cursors.WaitCursor;
@@ -196,7 +814,6 @@ namespace WordNetProgram
 
         private void modified_111126_Parent_Child_Of_Noun_KeyDown(object sender, KeyEventArgs e)
         {
-            // Trigger full screen when pressing 'F' if the user is not typing in a TextBox
             if (e.KeyCode == Keys.F && !(this.ActiveControl is TextBox))
             {
                 OpenGraphFullScreen();
@@ -246,7 +863,6 @@ namespace WordNetProgram
                     ScriptErrorsSuppressed = true
                 };
 
-                // Allow pressing 'F' for Full Screen even when the WebBrowser control has focus
                 svgViewer.PreviewKeyDown += (s, args) =>
                 {
                     if (args.KeyCode == Keys.F)
@@ -268,11 +884,13 @@ namespace WordNetProgram
                 return;
             }
 
-            // Temporarily disable button to prevent double-clicks
+            // Build or update nested dropdowns in tpNewFilter according to tbNewHierarchy
+            if (!TrySyncNewFilterDropdownsFromInput(out _))
+                return;
+
             btGenGraph.Enabled = false;
             this.Cursor = Cursors.WaitCursor;
 
-            // Run asynchronously so the C# form stays responsive
             await RunPythonBackendAsync(query);
 
             btGenGraph.Enabled = true;
@@ -281,9 +899,15 @@ namespace WordNetProgram
 
         private async Task RunPythonBackendAsync(string query)
         {
-            bool hasHierarchyInput = !string.IsNullOrWhiteSpace(tbHierarchy.Text) &&
-                                     int.TryParse(tbHierarchy.Text.Trim(), out int hVal) &&
-                                     hVal > 0;
+            int newHVal = -1;
+            bool hasNewHierarchyInput = !string.IsNullOrWhiteSpace(tbNewHierarchy.Text) &&
+                                        int.TryParse(tbNewHierarchy.Text.Trim(), out newHVal) &&
+                                        newHVal >= 0;
+
+            int oldHVal = -1;
+            bool hasOldHierarchyInput = !string.IsNullOrWhiteSpace(tbHierarchy.Text) &&
+                                        int.TryParse(tbHierarchy.Text.Trim(), out oldHVal) &&
+                                        oldHVal > 0;
 
             string GetLimit(TextBox tb, string defaultIfEmpty = "0")
             {
@@ -296,21 +920,28 @@ namespace WordNetProgram
                 return defaultIfEmpty;
             }
 
-            // If the user specified tbHierarchy (e.g., 3 or 6) and left the child limits blank,
-            // pass "-1" (unlimited) for downward children so all hierarchy levels are displayed.
-            string defaultDownwardLimit = hasHierarchyInput ? "-1" : "0";
+            string args;
+            if (hasNewHierarchyInput)
+            {
+                string configBase64 = BuildNewFilterConfigBase64(newHVal);
+                args = $"\"{jsonFile}\" \"{query}\" --new-filter {configBase64}";
+            }
+            else
+            {
+                string defaultDownwardLimit = hasOldHierarchyInput ? "-1" : "0";
 
-            string args = $"\"{jsonFile}\" \"{query}\" " +
-                          $"{GetLimit(tbMaxChild, defaultDownwardLimit)} " +
-                          $"{GetLimit(tbMaxGrandChild, defaultDownwardLimit)} " +
-                          $"{GetLimit(tbMaxGreatGrandChild, defaultDownwardLimit)} " +
-                          $"{GetLimit(tbMaxSibling, "0")} " +
-                          $"{GetLimit(tbMaxNephew, "0")} " +
-                          $"{GetLimit(tbMaxUncleAunt, "0")} " +
-                          $"{GetLimit(tbMaxCousin, "0")} " +
-                          $"{GetLimit(tbMaxGreatUncleGreatAunt, "0")} " +
-                          $"{GetLimit(tbMaxFirstCousin, "0")} " +
-                          $"{GetLimit(tbHierarchy, "-1")}";
+                args = $"\"{jsonFile}\" \"{query}\" " +
+                       $"{GetLimit(tbMaxChild, defaultDownwardLimit)} " +
+                       $"{GetLimit(tbMaxGrandChild, defaultDownwardLimit)} " +
+                       $"{GetLimit(tbMaxGreatGrandChild, defaultDownwardLimit)} " +
+                       $"{GetLimit(tbMaxSibling, "0")} " +
+                       $"{GetLimit(tbMaxNephew, "0")} " +
+                       $"{GetLimit(tbMaxUncleAunt, "0")} " +
+                       $"{GetLimit(tbMaxCousin, "0")} " +
+                       $"{GetLimit(tbMaxGreatUncleGreatAunt, "0")} " +
+                       $"{GetLimit(tbMaxFirstCousin, "0")} " +
+                       $"{GetLimit(tbHierarchy, "-1")}";
+            }
 
             try
             {
@@ -328,7 +959,6 @@ namespace WordNetProgram
                 string output = "";
                 string error = "";
 
-                // Run Python on a background thread so the C# UI never freezes
                 await Task.Run(() =>
                 {
                     using (Process process = Process.Start(startInfo))
@@ -364,7 +994,6 @@ namespace WordNetProgram
                 }
                 else if (output.Contains("SUCCESS:"))
                 {
-                    // 1. Collect all displayed synsets and their details from Python output
                     displayedSynsets.Clear();
                     if (output.Contains("SYNSETS_START"))
                     {
@@ -396,10 +1025,8 @@ namespace WordNetProgram
                         }
                     }
 
-                    // 2. Populate buttons and details panel in tpEntities
                     PopulateEntityButtons(displayedSynsets);
 
-                    // 3. Render SVG graph
                     string[] parts = output.Split(new[] { "SUCCESS:" }, StringSplitOptions.None);
                     string returnedPath = parts[1].Trim();
 
@@ -446,7 +1073,6 @@ namespace WordNetProgram
                 };
                 btn.FlatAppearance.BorderColor = Color.LightGray;
 
-                // Single-click: Show full details in the bottom Details Panel
                 btn.Click += (s, e) =>
                 {
                     if (s is Button clickedBtn && clickedBtn.Tag is SynsetEntityInfo selectedInfo)
@@ -455,7 +1081,6 @@ namespace WordNetProgram
                     }
                 };
 
-                // Double-click: Immediately regenerate the tree for this synset
                 btn.MouseDoubleClick += async (s, e) =>
                 {
                     if (s is Button clickedBtn && clickedBtn.Tag is SynsetEntityInfo selectedInfo)
@@ -468,7 +1093,6 @@ namespace WordNetProgram
                 pnlEntityButtons.Controls.Add(btn);
                 topPosition += buttonHeight + spacing;
 
-                // Automatically display the target (root) synset's details initially
                 if (i == 0)
                 {
                     ShowSynsetDetails(info, btn);
@@ -478,7 +1102,6 @@ namespace WordNetProgram
 
         private void ShowSynsetDetails(SynsetEntityInfo info, Button activeBtn)
         {
-            // Highlight the currently selected button border
             foreach (Control ctrl in pnlEntityButtons.Controls)
             {
                 if (ctrl is Button b)
@@ -496,21 +1119,18 @@ namespace WordNetProgram
                 $"Hypernyms (Parents): {info.Hypernyms}\n" +
                 $"Hyponyms (Children): {info.Hyponyms}";
 
-            // Reset all text formatting to standard black
             rtbEntityDetails.SelectAll();
             rtbEntityDetails.SelectionColor = Color.Black;
             rtbEntityDetails.SelectionFont = new Font("Tahoma", 9.5f, FontStyle.Regular);
 
-            // 1. Style the top "Offset: 02084071" value as a blue underlined hyperlink
             Match offsetMatch = Regex.Match(rtbEntityDetails.Text, @"^Offset:\s*(\d{8})");
             if (offsetMatch.Success)
             {
                 rtbEntityDetails.Select(offsetMatch.Groups[1].Index, offsetMatch.Groups[1].Length);
-                rtbEntityDetails.SelectionColor = Color.FromArgb(0, 102, 204); // Link Blue
+                rtbEntityDetails.SelectionColor = Color.FromArgb(0, 102, 204);
                 rtbEntityDetails.SelectionFont = new Font("Tahoma", 9.5f, FontStyle.Underline);
             }
 
-            // 2. Style every "02083346-สุนัข" pattern in Hypernyms/Hyponyms as a blue underlined hyperlink
             int hyperStartIndex = rtbEntityDetails.Text.IndexOf("Hypernyms (Parents):");
             if (hyperStartIndex != -1)
             {
@@ -518,7 +1138,7 @@ namespace WordNetProgram
                 foreach (Match m in matches)
                 {
                     rtbEntityDetails.Select(hyperStartIndex + m.Index, m.Length);
-                    rtbEntityDetails.SelectionColor = Color.FromArgb(0, 102, 204); // Link Blue
+                    rtbEntityDetails.SelectionColor = Color.FromArgb(0, 102, 204);
                     rtbEntityDetails.SelectionFont = new Font("Tahoma", 9.5f, FontStyle.Underline);
                 }
             }
@@ -541,7 +1161,6 @@ namespace WordNetProgram
                 string svgContent = File.ReadAllText(svgPath, Encoding.UTF8);
                 string htmlFilePath = Path.ChangeExtension(svgPath, ".html");
 
-                // Wrap the SVG in an HTML layout that centers it horizontally and vertically
                 string htmlContent = $@"<!DOCTYPE html>
 <html>
 <head>

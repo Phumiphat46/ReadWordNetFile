@@ -51,6 +51,7 @@
             label24 = new Label();
             label18 = new Label();
             tpFilter = new TabPage();
+            label25 = new Label();
             tbHierarchy = new TextBox();
             label23 = new Label();
             label17 = new Label();
@@ -77,7 +78,11 @@
             label7 = new Label();
             tbMaxChild = new TextBox();
             label5 = new Label();
-            label25 = new Label();
+            tpNewFilter = new TabPage();
+            label26 = new Label();
+            tbNewHierarchy = new TextBox();
+            label27 = new Label();
+            label28 = new Label();
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)splitContainer1).BeginInit();
             splitContainer1.Panel1.SuspendLayout();
@@ -87,6 +92,7 @@
             tabControl1.SuspendLayout();
             tpEntities.SuspendLayout();
             tpFilter.SuspendLayout();
+            tpNewFilter.SuspendLayout();
             SuspendLayout();
             // 
             // panel1
@@ -220,6 +226,7 @@
             tabControl1.Alignment = TabAlignment.Left;
             tabControl1.Controls.Add(tpEntities);
             tabControl1.Controls.Add(tpFilter);
+            tabControl1.Controls.Add(tpNewFilter);
             tabControl1.Dock = DockStyle.Fill;
             tabControl1.DrawMode = TabDrawMode.OwnerDrawFixed;
             tabControl1.Location = new Point(0, 0);
@@ -381,6 +388,15 @@
             tpFilter.TabIndex = 1;
             tpFilter.Text = "Filter";
             tpFilter.UseVisualStyleBackColor = true;
+            // 
+            // label25
+            // 
+            label25.AutoSize = true;
+            label25.Location = new Point(40, 90);
+            label25.Name = "label25";
+            label25.Size = new Size(235, 20);
+            label25.TabIndex = 77;
+            label25.Text = "(both Upper and Lower Hierarchy)";
             // 
             // tbHierarchy
             // 
@@ -598,14 +614,54 @@
             label5.TabIndex = 51;
             label5.Text = "Filter";
             // 
-            // label25
+            // tpNewFilter
             // 
-            label25.AutoSize = true;
-            label25.Location = new Point(40, 90);
-            label25.Name = "label25";
-            label25.Size = new Size(235, 20);
-            label25.TabIndex = 77;
-            label25.Text = "(both Upper and Lower Hierarchy)";
+            tpNewFilter.Controls.Add(label26);
+            tpNewFilter.Controls.Add(tbNewHierarchy);
+            tpNewFilter.Controls.Add(label27);
+            tpNewFilter.Controls.Add(label28);
+            tpNewFilter.Location = new Point(30, 4);
+            tpNewFilter.Name = "tpNewFilter";
+            tpNewFilter.Size = new Size(342, 860);
+            tpNewFilter.TabIndex = 2;
+            tpNewFilter.Text = "New Filter";
+            tpNewFilter.UseVisualStyleBackColor = true;
+            // 
+            // label26
+            // 
+            label26.AutoSize = true;
+            label26.Location = new Point(40, 90);
+            label26.Name = "label26";
+            label26.Size = new Size(235, 20);
+            label26.TabIndex = 81;
+            label26.Text = "(both Upper and Lower Hierarchy)";
+            // 
+            // tbNewHierarchy
+            // 
+            tbNewHierarchy.Location = new Point(41, 121);
+            tbNewHierarchy.Name = "tbNewHierarchy";
+            tbNewHierarchy.Size = new Size(239, 27);
+            tbNewHierarchy.TabIndex = 80;
+            // 
+            // label27
+            // 
+            label27.AutoSize = true;
+            label27.Location = new Point(42, 70);
+            label27.Name = "label27";
+            label27.Size = new Size(151, 20);
+            label27.TabIndex = 79;
+            label27.Text = "Number of Hierarchy:";
+            // 
+            // label28
+            // 
+            label28.AutoSize = true;
+            label28.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            label28.ForeColor = SystemColors.WindowText;
+            label28.Location = new Point(35, 21);
+            label28.Name = "label28";
+            label28.Size = new Size(72, 32);
+            label28.TabIndex = 78;
+            label28.Text = "Filter";
             // 
             // modified_111126_Parent_Child_Of_Noun
             // 
@@ -628,6 +684,8 @@
             tpEntities.PerformLayout();
             tpFilter.ResumeLayout(false);
             tpFilter.PerformLayout();
+            tpNewFilter.ResumeLayout(false);
+            tpNewFilter.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -683,5 +741,10 @@
         private TextBox tbHierarchy;
         private Label label23;
         private Label label25;
+        private TabPage tpNewFilter;
+        private Label label26;
+        private TextBox tbNewHierarchy;
+        private Label label27;
+        private Label label28;
     }
 }
