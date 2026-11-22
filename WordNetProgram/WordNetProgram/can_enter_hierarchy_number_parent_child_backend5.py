@@ -234,7 +234,7 @@ def build_family_tree_edges(
 # NEW FILTER (tpNewFilter) TRAVERSAL HELPERS
 # ==========================================
 def traverse_lateral_downward(data_dict, current_offset, edges, remaining_depth, visited):
-    if remaining_depth <= 0 or (current_offset, remaining_depth) in visited:
+    if (current_offset, remaining_depth) in visited:
         return
     visited.add((current_offset, remaining_depth))
 
@@ -242,13 +242,21 @@ def traverse_lateral_downward(data_dict, current_offset, edges, remaining_depth,
     if not entry:
         return
 
-    for child_hyp in entry.get("Hyponyms", []):
+    hyponyms = entry.get("Hyponyms", [])
+
+    # When lateral expansion stops (depth == 0), show an "Others (+N more)" clue if hidden children exist
+    if remaining_depth <= 0:
+        if len(hyponyms) > 0:
+            edges.add((current_offset, f"OTHERS_{current_offset}_{len(hyponyms)}"))
+        return
+
+    for child_hyp in hyponyms:
         child_offset = child_hyp["Target"]
         edges.add((current_offset, child_offset))
         traverse_lateral_downward(data_dict, child_offset, edges, remaining_depth - 1, visited)
 
 def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_depth, desc_cfg, visited_down):
-    if current_depth > max_depth or (current_offset, current_depth) in visited_down:
+    if (current_offset, current_depth) in visited_down:
         return
     visited_down.add((current_offset, current_depth))
 
@@ -256,11 +264,18 @@ def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_d
     if not entry:
         return
 
+    hyponyms = entry.get("Hyponyms", [])
+
+    # When downward traversal stops at the hierarchy limit, show an "Others (+N more)" clue if hidden children exist
+    if current_depth > max_depth:
+        if len(hyponyms) > 0:
+            edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{len(hyponyms)}"))
+        return
+
     cfg = desc_cfg.get(str(current_depth), {})
     if not cfg.get("show_other_children", True):
         return
 
-    hyponyms = entry.get("Hyponyms", [])
     limit = cfg.get("other_children", None)
 
     if limit is not None and len(hyponyms) > limit:
@@ -276,8 +291,9 @@ def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_d
         edges.add((current_offset, child_offset))
         traverse_downward_new(data_dict, child_offset, edges, current_depth + 1, max_depth, desc_cfg, visited_down)
 
+
 def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_depth, anc_cfg, visited_up, visited_lat):
-    if current_depth > max_depth or (current_offset, current_depth) in visited_up:
+    if (current_offset, current_depth) in visited_up:
         return
     visited_up.add((current_offset, current_depth))
 
@@ -285,12 +301,20 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
     if not entry:
         return
 
+    hypernyms = entry.get("Hypernyms", [])
+
+    # When upward traversal stops at the hierarchy limit, show an "Others (+N more)" clue if hidden parents exist
+    if current_depth > max_depth:
+        if len(hypernyms) > 0:
+            edges.add((f"OTHERS_ANC_OF_{current_offset}_{len(hypernyms)}", current_offset))
+        return
+
     cfg = anc_cfg.get(str(current_depth), {})
     show_other = cfg.get("show_other_children", True)
     other_limit = cfg.get("other_children", None)
     lateral_depth = cfg.get("depth", 0) or 0
 
-    for parent_hyp in entry.get("Hypernyms", []):
+    for parent_hyp in hypernyms:
         parent_offset = parent_hyp["Target"]
         edges.add((parent_offset, current_offset))
 
@@ -312,8 +336,8 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
                     sib_offset = sib_hyp["Target"]
                     edges.add((parent_offset, sib_offset))
 
-                    if lateral_depth > 0:
-                        traverse_lateral_downward(data_dict, sib_offset, edges, lateral_depth, visited_lat)
+                    # Always call traverse_lateral_downward so depth=0 adds the "Others (+N more)" indicator
+                    traverse_lateral_downward(data_dict, sib_offset, edges, lateral_depth, visited_lat)
 
             traverse_upward_new(data_dict, parent_offset, edges, current_depth + 1, max_depth, anc_cfg, visited_up, visited_lat)
 

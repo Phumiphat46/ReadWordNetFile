@@ -194,13 +194,14 @@ namespace WordNetProgram
             InitializeNewFilterTabLayout();
             string rawText = tbNewHierarchy.Text.Trim();
 
+            // Default to 0 when tbNewHierarchy is left blank
             if (string.IsNullOrEmpty(rawText))
             {
                 if (currentNewHierarchyCount != 0)
                 {
                     GenerateNewFilterDropdowns(0);
                 }
-                newHierarchyLevel = null;
+                newHierarchyLevel = 0;
                 return true;
             }
 
@@ -267,24 +268,27 @@ namespace WordNetProgram
                     pnlNewFilterSections.Controls.Add(section.ContentPanel);
                 }
 
-                // Visual gap between Ancestors and Descendants
-                Panel groupSpacer = new Panel
+                // 2. Descendants in ascending order: 1st Descendant -> ... -> (N - 1)th Descendant
+                if (count > 1)
                 {
-                    Size = new Size(sectionWidth, 16),
-                    BackColor = Color.White,
-                    Margin = new Padding(0)
-                };
-                pnlNewFilterSections.Controls.Add(groupSpacer);
+                    // Visual gap between Ancestors and Descendants
+                    Panel groupSpacer = new Panel
+                    {
+                        Size = new Size(sectionWidth, 16),
+                        BackColor = Color.White,
+                        Margin = new Padding(0)
+                    };
+                    pnlNewFilterSections.Controls.Add(groupSpacer);
 
-                // 2. Descendants in ascending order: 1st Descendant -> ... -> Nth Descendant
-                for (int i = 1; i <= count; i++)
-                {
-                    string title = $"{GetOrdinal(i)} Descendant";
-                    DropdownSection section = CreateDropdownSection(title, false, i, sectionWidth);
-                    newFilterDropdownSections.Add(section);
+                    for (int i = 1; i <= count - 1; i++)
+                    {
+                        string title = $"{GetOrdinal(i)} Descendant";
+                        DropdownSection section = CreateDropdownSection(title, false, i, sectionWidth);
+                        newFilterDropdownSections.Add(section);
 
-                    pnlNewFilterSections.Controls.Add(section.HeaderPanel);
-                    pnlNewFilterSections.Controls.Add(section.ContentPanel);
+                        pnlNewFilterSections.Controls.Add(section.HeaderPanel);
+                        pnlNewFilterSections.Controls.Add(section.ContentPanel);
+                    }
                 }
             }
 
@@ -318,9 +322,10 @@ namespace WordNetProgram
             });
             section.ChevronLabel = chevron;
 
-            // Row 1: Other Children TextBox
+            // Row 1: Other Children TextBox (pre-filled with "0")
             section.ContentPanel.Controls.Add(
                 CreateTextBoxRow("Other Children:", rowWidth, out CheckBox chkOtherChildren, out TextBox txtOtherChildren));
+            txtOtherChildren.Text = isAncestor ? "0" : "";
             section.ChkOtherChildren = chkOtherChildren;
             section.TxtOtherChildren = txtOtherChildren;
 
@@ -899,49 +904,17 @@ namespace WordNetProgram
 
         private async Task RunPythonBackendAsync(string query)
         {
-            int newHVal = -1;
-            bool hasNewHierarchyInput = !string.IsNullOrWhiteSpace(tbNewHierarchy.Text) &&
-                                        int.TryParse(tbNewHierarchy.Text.Trim(), out newHVal) &&
-                                        newHVal >= 0;
-
-            int oldHVal = -1;
-            bool hasOldHierarchyInput = !string.IsNullOrWhiteSpace(tbHierarchy.Text) &&
-                                        int.TryParse(tbHierarchy.Text.Trim(), out oldHVal) &&
-                                        oldHVal > 0;
-
-            string GetLimit(TextBox tb, string defaultIfEmpty = "0")
+            // Default to 0 when tbNewHierarchy is left blank
+            int newHVal = 0;
+            if (!string.IsNullOrWhiteSpace(tbNewHierarchy.Text) &&
+                int.TryParse(tbNewHierarchy.Text.Trim(), out int parsedNewH) &&
+                parsedNewH >= 0)
             {
-                if (string.IsNullOrWhiteSpace(tb.Text)) return defaultIfEmpty;
-
-                if (int.TryParse(tb.Text.Trim(), out int val))
-                {
-                    return val.ToString();
-                }
-                return defaultIfEmpty;
+                newHVal = parsedNewH;
             }
 
-            string args;
-            if (hasNewHierarchyInput)
-            {
-                string configBase64 = BuildNewFilterConfigBase64(newHVal);
-                args = $"\"{jsonFile}\" \"{query}\" --new-filter {configBase64}";
-            }
-            else
-            {
-                string defaultDownwardLimit = hasOldHierarchyInput ? "-1" : "0";
-
-                args = $"\"{jsonFile}\" \"{query}\" " +
-                       $"{GetLimit(tbMaxChild, defaultDownwardLimit)} " +
-                       $"{GetLimit(tbMaxGrandChild, defaultDownwardLimit)} " +
-                       $"{GetLimit(tbMaxGreatGrandChild, defaultDownwardLimit)} " +
-                       $"{GetLimit(tbMaxSibling, "0")} " +
-                       $"{GetLimit(tbMaxNephew, "0")} " +
-                       $"{GetLimit(tbMaxUncleAunt, "0")} " +
-                       $"{GetLimit(tbMaxCousin, "0")} " +
-                       $"{GetLimit(tbMaxGreatUncleGreatAunt, "0")} " +
-                       $"{GetLimit(tbMaxFirstCousin, "0")} " +
-                       $"{GetLimit(tbHierarchy, "-1")}";
-            }
+            string configBase64 = BuildNewFilterConfigBase64(newHVal);
+            string args = $"\"{jsonFile}\" \"{query}\" --new-filter {configBase64}";
 
             try
             {

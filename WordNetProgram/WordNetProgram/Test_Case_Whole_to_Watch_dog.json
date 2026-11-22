@@ -742,12 +742,63 @@
         "SourceTarget": "0000"
       }
     ],
-    "Hyponyms": [],
+    "Hyponyms": [
+	  {
+        "Target": "01468712",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+	],
     "InstanceHypernyms": [],
     "InstanceHyponyms": [],
     "HolonymsMember": [
       {
         "Target": "01467986",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "01468712",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "ascidian"
+    ],
+    "Gloss": "minute sedentary marine invertebrate having a saclike body with siphons through which water enters and leaves",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "แอสซิเดียน"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "01468238",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01468532",
         "POS": "n",
         "SourceTarget": "0000"
       }
