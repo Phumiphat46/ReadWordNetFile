@@ -116,6 +116,19 @@ def get_synset_payload(data_dict, offset):
         return f"{offset}|{btn_text}|{all_eng}|{thai_display}|{source}|{gloss}|{hyper_str}|{hypo_str}"
     return f"{offset}|{offset}: unknown|unknown|-|-|No details available|None|0"
 
+# Formats a synset option for the C# multi-select dropdown
+def format_dropdown_option(data_dict, offset):
+    entry = data_dict.get(offset)
+    if entry:
+        thai_words = entry.get("ThaiWords", [])
+        thai_str = ", ".join(thai_words) if thai_words else "-"
+        eng_words = entry.get("Words", ["unknown"])
+        eng_str = eng_words[0] if eng_words else "unknown"
+    else:
+        thai_str = "-"
+        eng_str = "unknown"
+    return f"Synset: {offset}, TH: {thai_str}, ENG: {eng_str}"
+
 # ==========================================
 # LEGACY FILTER (tpFilter) TRAVERSAL HELPERS
 # ==========================================
@@ -247,7 +260,7 @@ def traverse_lateral_downward(data_dict, current_offset, edges, remaining_depth,
     # When lateral expansion stops (depth == 0), show an "Others (+N more)" clue if hidden children exist
     if remaining_depth <= 0:
         if len(hyponyms) > 0:
-            edges.add((current_offset, f"OTHERS_{current_offset}_{len(hyponyms)}"))
+            edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{len(hyponyms)}"))
         return
 
     for child_hyp in hyponyms:
@@ -255,7 +268,8 @@ def traverse_lateral_downward(data_dict, current_offset, edges, remaining_depth,
         edges.add((current_offset, child_offset))
         traverse_lateral_downward(data_dict, child_offset, edges, remaining_depth - 1, visited)
 
-def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_depth, desc_cfg, visited_down):
+
+def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_depth, desc_cfg, visited_down, dropdown_options):
     if (current_offset, current_depth) in visited_down:
         return
     visited_down.add((current_offset, current_depth))
@@ -273,26 +287,29 @@ def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_d
         return
 
     cfg = desc_cfg.get(str(current_depth), {})
-    if not cfg.get("show_other_children", True):
+    show_desc = cfg.get("show_descendants", cfg.get("show_other_children", True))
+    if not show_desc:
+        if len(hyponyms) > 0:
+            edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{len(hyponyms)}"))
         return
 
-    limit = cfg.get("other_children", None)
+    limit = cfg.get("number_of_descendant", cfg.get("other_children", None))
 
     if limit is not None and len(hyponyms) > limit:
         shown_hyps = hyponyms[:limit]
         remaining = len(hyponyms) - limit
         if remaining > 0:
-            edges.add((current_offset, f"OTHERS_{current_offset}_{remaining}"))
+            edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
     else:
         shown_hyps = hyponyms
 
     for hyp in shown_hyps:
         child_offset = hyp["Target"]
         edges.add((current_offset, child_offset))
-        traverse_downward_new(data_dict, child_offset, edges, current_depth + 1, max_depth, desc_cfg, visited_down)
+        traverse_downward_new(data_dict, child_offset, edges, current_depth + 1, max_depth, desc_cfg, visited_down, dropdown_options)
 
 
-def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_depth, anc_cfg, visited_up, visited_lat):
+def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_depth, anc_cfg, visited_up, visited_lat, dropdown_options):
     if (current_offset, current_depth) in visited_up:
         return
     visited_up.add((current_offset, current_depth))
@@ -313,6 +330,7 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
     show_other = cfg.get("show_other_children", True)
     other_limit = cfg.get("other_children", None)
     lateral_depth = cfg.get("depth", 0) or 0
+    depth_target_offsets = set(cfg.get("depth_target_offsets", []))
 
     for parent_hyp in hypernyms:
         parent_offset = parent_hyp["Target"]
@@ -325,23 +343,32 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
                 actual_sibs = [h for h in all_sibs if h["Target"] != current_offset]
 
                 if other_limit is not None and len(actual_sibs) > other_limit:
-                    shown_sibs = actual_sibs[:other_limit]
+                    candidate_sibs = actual_sibs[:other_limit]
                     rem_sibs = len(actual_sibs) - other_limit
                     if rem_sibs > 0:
                         edges.add((parent_offset, f"OTHERS_{parent_offset}_{rem_sibs}"))
                 else:
-                    shown_sibs = actual_sibs
+                    candidate_sibs = actual_sibs
 
-                for sib_hyp in shown_sibs:
+                # Record all candidate synsets for this ancestor level's dropdown
+                for sib_hyp in candidate_sibs:
+                    dropdown_options["ancestors"].setdefault(current_depth, set()).add(sib_hyp["Target"])
+
+                # Always display all candidate siblings; only apply lateral_depth to selected synsets
+                for sib_hyp in candidate_sibs:
                     sib_offset = sib_hyp["Target"]
                     edges.add((parent_offset, sib_offset))
 
-                    # Always call traverse_lateral_downward so depth=0 adds the "Others (+N more)" indicator
-                    traverse_lateral_downward(data_dict, sib_offset, edges, lateral_depth, visited_lat)
+                    if depth_target_offsets and sib_offset not in depth_target_offsets:
+                        effective_depth = 0
+                    else:
+                        effective_depth = lateral_depth
 
-            traverse_upward_new(data_dict, parent_offset, edges, current_depth + 1, max_depth, anc_cfg, visited_up, visited_lat)
+                    traverse_lateral_downward(data_dict, sib_offset, edges, effective_depth, visited_lat)
 
-def build_family_tree_edges_new_filter(data_dict, target_offset, edges, config):
+            traverse_upward_new(data_dict, parent_offset, edges, current_depth + 1, max_depth, anc_cfg, visited_up, visited_lat, dropdown_options)
+
+def build_family_tree_edges_new_filter(data_dict, target_offset, edges, config, dropdown_options):
     if not data_dict.get(target_offset):
         return
 
@@ -352,8 +379,8 @@ def build_family_tree_edges_new_filter(data_dict, target_offset, edges, config):
     anc_cfg = config.get("ancestors", {})
     desc_cfg = config.get("descendants", {})
 
-    traverse_downward_new(data_dict, target_offset, edges, 1, hierarchy_level, desc_cfg, set())
-    traverse_upward_new(data_dict, target_offset, edges, 1, hierarchy_level, anc_cfg, set(), set())
+    traverse_downward_new(data_dict, target_offset, edges, 1, hierarchy_level, desc_cfg, set(), dropdown_options)
+    traverse_upward_new(data_dict, target_offset, edges, 1, hierarchy_level, anc_cfg, set(), set(), dropdown_options)
 
 def parse_limit(arg):
     try:
@@ -408,6 +435,7 @@ def main():
 
     target_offset = target_synset["Offset"]
     edges = set()
+    dropdown_options = {"ancestors": {}, "descendants": {}}
 
     if len(sys.argv) >= 5 and sys.argv[3] == "--new-filter":
         try:
@@ -417,7 +445,7 @@ def main():
             print(f"ERROR: Invalid new-filter config. {e}")
             sys.exit(1)
 
-        build_family_tree_edges_new_filter(data_dict, target_offset, edges, new_filter_config)
+        build_family_tree_edges_new_filter(data_dict, target_offset, edges, new_filter_config, dropdown_options)
     else:
         max_children = parse_limit(sys.argv[3]) if len(sys.argv) > 3 else None
         max_grandchildren = parse_limit(sys.argv[4]) if len(sys.argv) > 4 else None
@@ -474,6 +502,15 @@ def main():
         for synset_id in ordered_synsets:
             print(get_synset_payload(data_dict, synset_id))
         print("SYNSETS_END")
+
+        print("DROPDOWN_OPTIONS_START")
+        for group_key in ("ancestors", "descendants"):
+            group_prefix = "ANC" if group_key == "ancestors" else "DESC"
+            for level, offsets in sorted(dropdown_options[group_key].items()):
+                for off in sorted(list(offsets), reverse=True):
+                    display_text = format_dropdown_option(data_dict, off).replace("|", "/")
+                    print(f"{group_prefix}|{level}|{off}|{display_text}")
+        print("DROPDOWN_OPTIONS_END")
 
         print(f"SUCCESS:{output_path}")
     except Exception as e:

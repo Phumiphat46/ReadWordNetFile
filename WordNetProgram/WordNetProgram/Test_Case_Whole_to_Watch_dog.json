@@ -564,6 +564,11 @@
       }
     ],
     "Hyponyms": [
+	  {
+        "Target": "01467336",
+        "POS": "n",
+        "SourceTarget": "0000"
+      },
       {
         "Target": "01471682",
         "POS": "n",
@@ -799,6 +804,103 @@
     "HolonymsMember": [
       {
         "Target": "01468532",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "01467336",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "cephalochordate"
+    ],
+    "Gloss": "fish-like animals having a notochord rather than a true spinal column",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "เซฟาโลคอร์เดต"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "01466257",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [
+      {
+        "Target": "01467804",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01467180",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "01467804",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "lancelet",
+      "amphioxus"
+    ],
+    "Gloss": "small translucent lancet-shaped burrowing marine animal; primitive forerunner of the vertebrates",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "แอมฟิออกซัส"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "01467336",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01467675",
         "POS": "n",
         "SourceTarget": "0000"
       }
