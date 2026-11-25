@@ -328,7 +328,7 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
 
     cfg = anc_cfg.get(str(current_depth), {})
     show_other = cfg.get("show_other_children", True)
-    other_limit = cfg.get("other_children", None)
+    selected_other = set(cfg.get("selected_other_children", []))
     lateral_depth = cfg.get("depth", 0) or 0
     depth_target_offsets = set(cfg.get("depth_target_offsets", []))
 
@@ -338,33 +338,32 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
 
         parent_entry = data_dict.get(parent_offset)
         if parent_entry:
-            if show_other:
-                all_sibs = parent_entry.get("Hyponyms", [])
-                actual_sibs = [h for h in all_sibs if h["Target"] != current_offset]
+            all_sibs = parent_entry.get("Hyponyms", [])
+            actual_sibs = [h for h in all_sibs if h["Target"] != current_offset]
 
-                if other_limit is not None and len(actual_sibs) > other_limit:
-                    candidate_sibs = actual_sibs[:other_limit]
-                    rem_sibs = len(actual_sibs) - other_limit
-                    if rem_sibs > 0:
-                        edges.add((parent_offset, f"OTHERS_{parent_offset}_{rem_sibs}"))
+            # Always send all available siblings so the Other Children dropdown is populated on the first run
+            for sib_hyp in actual_sibs:
+                dropdown_options["ancestors"].setdefault(current_depth, set()).add(sib_hyp["Target"])
+
+            if show_other and selected_other:
+                displayed_sibs = [h for h in actual_sibs if h["Target"] in selected_other]
+            else:
+                displayed_sibs = []
+
+            rem_sibs = len(actual_sibs) - len(displayed_sibs)
+            if rem_sibs > 0:
+                edges.add((parent_offset, f"OTHERS_{parent_offset}_{rem_sibs}"))
+
+            for sib_hyp in displayed_sibs:
+                sib_offset = sib_hyp["Target"]
+                edges.add((parent_offset, sib_offset))
+
+                if depth_target_offsets and sib_offset not in depth_target_offsets:
+                    effective_depth = 0
                 else:
-                    candidate_sibs = actual_sibs
+                    effective_depth = lateral_depth
 
-                # Record all candidate synsets for this ancestor level's dropdown
-                for sib_hyp in candidate_sibs:
-                    dropdown_options["ancestors"].setdefault(current_depth, set()).add(sib_hyp["Target"])
-
-                # Always display all candidate siblings; only apply lateral_depth to selected synsets
-                for sib_hyp in candidate_sibs:
-                    sib_offset = sib_hyp["Target"]
-                    edges.add((parent_offset, sib_offset))
-
-                    if depth_target_offsets and sib_offset not in depth_target_offsets:
-                        effective_depth = 0
-                    else:
-                        effective_depth = lateral_depth
-
-                    traverse_lateral_downward(data_dict, sib_offset, edges, effective_depth, visited_lat)
+                traverse_lateral_downward(data_dict, sib_offset, edges, effective_depth, visited_lat)
 
             traverse_upward_new(data_dict, parent_offset, edges, current_depth + 1, max_depth, anc_cfg, visited_up, visited_lat, dropdown_options)
 
@@ -467,6 +466,7 @@ def main():
         )
 
     dot = graphviz.Digraph(name="Tree")
+    dot.attr(ranksep='1.5', nodesep='0.35', splines='polyline', concentrate='true')
     dot.attr('node', shape='box', fontname='Tahoma', style='round,filled', fillcolor='#F9F9F9')
     dot.attr('edge', fontname='Tahoma', color='#555555')
 
