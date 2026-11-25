@@ -64,14 +64,14 @@ namespace WordNetProgram
             public bool OtherChildrenChecked { get; set; } = true;
             public string OtherChildrenText { get; set; } = "0";
             public bool DepthChecked { get; set; } = true;
-            public string DepthText { get; set; } = "";
+            public string DepthText { get; set; } = "0";
             public bool ApplyDepthChecked { get; set; } = true;
             public List<SynsetDropdownItem> SynsetItems { get; set; } = new List<SynsetDropdownItem>();
             public HashSet<string> CheckedOffsets { get; set; } = new HashSet<string>();
 
             // Descendant state
             public bool NumberOfDescendantChecked { get; set; } = true;
-            public string NumberOfDescendantText { get; set; } = "";
+            public string NumberOfDescendantText { get; set; } = "0";
         }
 
         private readonly Dictionary<(bool IsAncestor, int Level), SavedDropdownState> savedFilterStates = new Dictionary<(bool IsAncestor, int Level), SavedDropdownState>();
@@ -437,9 +437,10 @@ namespace WordNetProgram
                 section.ChkOtherChildren = chkOtherChildren;
                 section.TxtOtherChildren = txtOtherChildren;
 
-                // Row 2: Depth TextBox
+                // Row 2: Depth TextBox (pre-filled with "0")
                 section.ContentPanel.Controls.Add(
                     CreateTextBoxRow("Depth:", rowWidth, out CheckBox chkDepth, out TextBox txtDepth));
+                txtDepth.Text = "0";
                 section.ChkDepth = chkDepth;
                 section.TxtDepth = txtDepth;
 
@@ -448,7 +449,7 @@ namespace WordNetProgram
             }
             else
             {
-                // Descendant Row: Number of Descendant TextBox
+                // Descendant Row: Number of Descendant TextBox (pre-filled with "0")
                 section.ContentPanel.Controls.Add(
                     CreateTextBoxRow(
                         "Number of Descendant:",
@@ -456,6 +457,7 @@ namespace WordNetProgram
                         out CheckBox chkNumberOfDescendant,
                         out TextBox tbNumberOfDescendant,
                         widthSampleText: "Number of Descendant:"));
+                tbNumberOfDescendant.Text = "0";
                 section.ChkNumberOfDescendant = chkNumberOfDescendant;
                 section.TbNumberOfDescendant = tbNumberOfDescendant;
             }
