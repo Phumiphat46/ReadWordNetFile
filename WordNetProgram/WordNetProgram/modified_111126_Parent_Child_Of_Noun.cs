@@ -1349,12 +1349,14 @@ namespace WordNetProgram
                 if (depth > 0)
                 {
                     Font rowFont = new Font("Segoe UI", 8.5f);
-                    int indentLeft = 32;
-                    int labelWidth = 78;
-                    int maxInputLeft = indentLeft + labelWidth + 4;
-                    int maxInputWidth = 38;
+                    int indentLeft = 28;
+                    string widestLabel = $"Depth {depth} Max:";
+                    int labelWidth = TextRenderer.MeasureText(widestLabel, rowFont).Width + 12;
+                    int maxInputLeft = indentLeft + labelWidth + 6;
+                    int maxInputWidth = 42;
                     int pickerLeft = maxInputLeft + maxInputWidth + 6;
-                    int pickerWidth = Math.Max(110, RowWidth - pickerLeft - 15);
+                    int pickerWidth = Math.Max(100, RowWidth - pickerLeft - 15);
+                    int actualRowWidth = Math.Max(RowWidth, pickerLeft + pickerWidth + 10);
                     int popupWidth = Math.Max(pickerWidth, 380);
 
                     for (int d = 1; d <= depth; d++)
@@ -1371,7 +1373,7 @@ namespace WordNetProgram
 
                         Panel subRow = new Panel
                         {
-                            Size = new Size(RowWidth, 34),
+                            Size = new Size(actualRowWidth, 34),
                             BackColor = Color.White,
                             Margin = new Padding(0)
                         };
