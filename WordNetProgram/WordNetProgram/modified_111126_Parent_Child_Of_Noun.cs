@@ -41,6 +41,28 @@ namespace WordNetProgram
             public override string ToString() => DisplayText;
         }
 
+        // Group header row inside the Depth picker (e.g., "Parent: tunicate")
+        private class DepthParentHeaderItem
+        {
+            public string ParentLabel { get; set; }
+            public override string ToString() => $"Parent: {ParentLabel}";
+        }
+
+        // Indented child row inside the Depth picker
+        private class IndentedSynsetDropdownItem
+        {
+            public SynsetDropdownItem Item { get; set; }
+            public string ParentLabel { get; set; }
+            public override string ToString() => $"    {Item.DisplayText}";
+        }
+
+        private static string ExtractParentLabel(string displayText)
+        {
+            if (string.IsNullOrEmpty(displayText)) return "Unknown";
+            Match m = Regex.Match(displayText, @"\[Parent:\s*([^\]]+)\]");
+            return m.Success ? m.Groups[1].Value.Trim() : "Unknown";
+        }
+
         private List<SynsetEntityInfo> displayedSynsets = new List<SynsetEntityInfo>();
         private Panel pnlEntityButtons = null;
         private Panel pnlEntityDetails = null;
@@ -1465,10 +1487,10 @@ namespace WordNetProgram
                             for (int i = 0; i < picker.ClbNodes.Items.Count; i++)
                             {
                                 picker.ClbNodes.SetItemChecked(i, checkAll);
-                                if (picker.ClbNodes.Items[i] is SynsetDropdownItem synItem)
+                                if (picker.ClbNodes.Items[i] is IndentedSynsetDropdownItem indented)
                                 {
-                                    if (checkAll) checkedSet.Add(synItem.Offset);
-                                    else checkedSet.Remove(synItem.Offset);
+                                    if (checkAll) checkedSet.Add(indented.Item.Offset);
+                                    else checkedSet.Remove(indented.Item.Offset);
                                 }
                             }
                             picker.IsUpdatingChecks = false;
@@ -1482,25 +1504,69 @@ namespace WordNetProgram
                             if (picker.IsUpdatingChecks) return;
 
                             var checkedSet = CheckedDepthNodeOffsets[depthIndex];
-                            if (picker.ClbNodes.Items[e.Index] is SynsetDropdownItem synItem)
+                            bool isChecked = (e.NewValue == CheckState.Checked);
+                            object clickedObj = picker.ClbNodes.Items[e.Index];
+
+                            if (clickedObj is DepthParentHeaderItem header)
                             {
-                                if (e.NewValue == CheckState.Checked)
-                                    checkedSet.Add(synItem.Offset);
-                                else
-                                    checkedSet.Remove(synItem.Offset);
+                                picker.ClbNodes.BeginInvoke((Action)(() =>
+                                {
+                                    picker.IsUpdatingChecks = true;
+                                    for (int i = 0; i < picker.ClbNodes.Items.Count; i++)
+                                    {
+                                        if (picker.ClbNodes.Items[i] is IndentedSynsetDropdownItem child &&
+                                            child.ParentLabel == header.ParentLabel)
+                                        {
+                                            picker.ClbNodes.SetItemChecked(i, isChecked);
+                                            if (isChecked) checkedSet.Add(child.Item.Offset);
+                                            else checkedSet.Remove(child.Item.Offset);
+                                        }
+                                    }
+
+                                    SyncDepthSelectAllState(picker);
+                                    picker.IsUpdatingChecks = false;
+
+                                    DepthOptionsDirty = true;
+                                    UpdateDepthPickerButtonText(depthIndex);
+                                }));
                             }
-
-                            picker.ClbNodes.BeginInvoke((Action)(() =>
+                            else if (clickedObj is IndentedSynsetDropdownItem indented)
                             {
-                                picker.IsUpdatingChecks = true;
-                                picker.ChkSelectAll.Checked =
-                                    (picker.ClbNodes.Items.Count > 0 &&
-                                     picker.ClbNodes.CheckedItems.Count == picker.ClbNodes.Items.Count);
-                                picker.IsUpdatingChecks = false;
+                                if (isChecked) checkedSet.Add(indented.Item.Offset);
+                                else checkedSet.Remove(indented.Item.Offset);
 
-                                DepthOptionsDirty = true;
-                                UpdateDepthPickerButtonText(depthIndex);
-                            }));
+                                picker.ClbNodes.BeginInvoke((Action)(() =>
+                                {
+                                    picker.IsUpdatingChecks = true;
+
+                                    // Sync the parent header checkbox for this group
+                                    int headerIndex = -1;
+                                    bool allGroupChecked = true;
+                                    for (int i = 0; i < picker.ClbNodes.Items.Count; i++)
+                                    {
+                                        if (picker.ClbNodes.Items[i] is DepthParentHeaderItem h &&
+                                            h.ParentLabel == indented.ParentLabel)
+                                        {
+                                            headerIndex = i;
+                                        }
+                                        else if (picker.ClbNodes.Items[i] is IndentedSynsetDropdownItem child &&
+                                                 child.ParentLabel == indented.ParentLabel)
+                                        {
+                                            if (!picker.ClbNodes.GetItemChecked(i))
+                                                allGroupChecked = false;
+                                        }
+                                    }
+
+                                    if (headerIndex >= 0)
+                                        picker.ClbNodes.SetItemChecked(headerIndex, allGroupChecked);
+
+                                    SyncDepthSelectAllState(picker);
+                                    picker.IsUpdatingChecks = false;
+
+                                    DepthOptionsDirty = true;
+                                    UpdateDepthPickerButtonText(depthIndex);
+                                }));
+                            }
                         };
 
                         popupPanel.Controls.Add(picker.TxtSearch);
@@ -1574,6 +1640,24 @@ namespace WordNetProgram
                     picker.BtnPick.Text = $"{count}/{total} Picked ▼";
             }
 
+            private void SyncDepthSelectAllState(DepthPickerControl picker)
+            {
+                int totalChildren = 0;
+                int checkedChildren = 0;
+
+                for (int i = 0; i < picker.ClbNodes.Items.Count; i++)
+                {
+                    if (picker.ClbNodes.Items[i] is IndentedSynsetDropdownItem)
+                    {
+                        totalChildren++;
+                        if (picker.ClbNodes.GetItemChecked(i))
+                            checkedChildren++;
+                    }
+                }
+
+                picker.ChkSelectAll.Checked = (totalChildren > 0 && checkedChildren == totalChildren);
+            }
+
             public void ApplyDepthSearchFilter(int depthIndex, string searchText)
             {
                 if (!DepthPickers.TryGetValue(depthIndex, out var picker) || picker.ClbNodes == null) return;
@@ -1582,22 +1666,33 @@ namespace WordNetProgram
                 var items = DepthNodeItems.TryGetValue(depthIndex, out var list) ? list : new List<SynsetDropdownItem>();
                 var checkedSet = CheckedDepthNodeOffsets.TryGetValue(depthIndex, out var set) ? set : new HashSet<string>();
 
+                var matchingItems = items
+                    .Where(item => string.IsNullOrEmpty(filter) ||
+                                   item.DisplayText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .ToList();
+
+                var grouped = matchingItems
+                    .GroupBy(item => ExtractParentLabel(item.DisplayText));
+
                 picker.IsUpdatingChecks = true;
                 picker.ClbNodes.Items.Clear();
 
-                foreach (var item in items)
+                foreach (var group in grouped)
                 {
-                    if (string.IsNullOrEmpty(filter) ||
-                        item.DisplayText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    bool allGroupChecked = group.All(item => checkedSet.Contains(item.Offset));
+                    picker.ClbNodes.Items.Add(new DepthParentHeaderItem { ParentLabel = group.Key }, allGroupChecked);
+
+                    foreach (var item in group)
                     {
                         bool isChecked = checkedSet.Contains(item.Offset);
-                        picker.ClbNodes.Items.Add(item, isChecked);
+                        picker.ClbNodes.Items.Add(
+                            new IndentedSynsetDropdownItem { Item = item, ParentLabel = group.Key },
+                            isChecked
+                        );
                     }
                 }
 
-                picker.ChkSelectAll.Checked =
-                    (picker.ClbNodes.Items.Count > 0 &&
-                     picker.ClbNodes.CheckedItems.Count == picker.ClbNodes.Items.Count);
+                SyncDepthSelectAllState(picker);
                 picker.IsUpdatingChecks = false;
             }
 
