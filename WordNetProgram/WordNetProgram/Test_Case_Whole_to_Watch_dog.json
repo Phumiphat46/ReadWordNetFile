@@ -752,6 +752,11 @@
         "Target": "01468712",
         "POS": "n",
         "SourceTarget": "0000"
+      },
+	  {
+        "Target": "01469723",
+        "POS": "n",
+        "SourceTarget": "0000"
       }
 	],
     "InstanceHypernyms": [],
@@ -804,6 +809,52 @@
     "HolonymsMember": [
       {
         "Target": "01468532",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "HolonymsSubstance": [],
+    "HolonymsPart": [],
+    "MeronymsMember": [],
+    "MeronymsSubstance": [],
+    "MeronymsPart": [],
+    "Attributes": [],
+    "DerivationallyRelated": [],
+    "DomainTopic": [],
+    "DomainRegion": [],
+    "DomainUsage": [],
+    "MemberDomainTopic": [],
+    "MemberDomainRegion": [],
+    "MemberDomainUsage": []
+  },
+  {
+    "Offset": "01469723",
+    "LexFileNum": "05",
+    "SynsetType": "n",
+    "Words": [
+      "salp",
+      "salpa"
+    ],
+    "Gloss": "minute floating marine tunicate having a transparent body with an opening at each end",
+    "ThaiWordsCount": "1",
+    "ThaiWords": [
+      "ซัลปา"
+    ],
+    "ThaiWordsSource": "OMW",
+    "Antonyms": [],
+    "Hypernyms": [
+      {
+        "Target": "01468238",
+        "POS": "n",
+        "SourceTarget": "0000"
+      }
+    ],
+    "Hyponyms": [],
+    "InstanceHypernyms": [],
+    "InstanceHyponyms": [],
+    "HolonymsMember": [
+      {
+        "Target": "01469586",
         "POS": "n",
         "SourceTarget": "0000"
       }
@@ -1373,3 +1424,4 @@
     "MemberDomainUsage": []
   }
 ]
+

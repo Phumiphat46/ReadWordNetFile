@@ -129,6 +129,22 @@ def format_dropdown_option(data_dict, offset):
         eng_str = "unknown"
     return f"Synset: {offset}, TH: {thai_str}, ENG: {eng_str}"
 
+# Formats a depth-level synset option with its parent name(s) so mixed branches stay clear
+def format_depth_dropdown_option(data_dict, offset, parent_offsets):
+    base_text = format_dropdown_option(data_dict, offset)
+    parent_names = []
+    for p_off in sorted(list(parent_offsets)):
+        p_entry = data_dict.get(p_off)
+        if p_entry:
+            p_words = p_entry.get("Words", [p_off])
+            parent_names.append(p_words[0] if p_words else p_off)
+        else:
+            parent_names.append(p_off)
+
+    if parent_names:
+        return f"{base_text}  [Parent: {', '.join(parent_names)}]"
+    return base_text
+
 # ==========================================
 # LEGACY FILTER (tpFilter) TRAVERSAL HELPERS
 # ==========================================
@@ -246,10 +262,13 @@ def build_family_tree_edges(
 # ==========================================
 # NEW FILTER (tpNewFilter) TRAVERSAL HELPERS
 # ==========================================
-def traverse_lateral_downward(data_dict, current_offset, edges, remaining_depth, visited):
-    if (current_offset, remaining_depth) in visited:
+def traverse_lateral_downward(
+    data_dict, current_offset, edges, current_depth, max_depth,
+    depth_limits, depth_selected, anc_level, visited, dropdown_options
+):
+    if (anc_level, current_offset, current_depth) in visited:
         return
-    visited.add((current_offset, remaining_depth))
+    visited.add((anc_level, current_offset, current_depth))
 
     entry = data_dict.get(current_offset)
     if not entry:
@@ -257,16 +276,41 @@ def traverse_lateral_downward(data_dict, current_offset, edges, remaining_depth,
 
     hyponyms = entry.get("Hyponyms", [])
 
-    # When lateral expansion stops (depth == 0), show an "Others (+N more)" clue if hidden children exist
-    if remaining_depth <= 0:
+    # When lateral expansion stops at max_depth, show an "Others (+N more)" clue if hidden children exist
+    if current_depth > max_depth:
         if len(hyponyms) > 0:
             edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{len(hyponyms)}"))
         return
 
-    for child_hyp in hyponyms:
+    # Always record all available hyponyms at this depth so the C# Depth node picker is populated
+    depth_bucket = dropdown_options["anc_depth"].setdefault((anc_level, current_depth), {})
+    for hyp in hyponyms:
+        depth_bucket.setdefault(hyp["Target"], set()).add(current_offset)
+
+    # Hybrid selection: if user picked specific nodes for this depth, use them; otherwise use numeric limit
+    selected_at_depth = set(depth_selected.get(str(current_depth), [])) if depth_selected else set()
+    if selected_at_depth:
+        shown_hyps = [h for h in hyponyms if h["Target"] in selected_at_depth]
+        remaining = len(hyponyms) - len(shown_hyps)
+        if remaining > 0:
+            edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
+    else:
+        limit = depth_limits.get(str(current_depth), None) if depth_limits else None
+        if limit is not None and len(hyponyms) > limit:
+            shown_hyps = hyponyms[:limit]
+            remaining = len(hyponyms) - limit
+            if remaining > 0:
+                edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
+        else:
+            shown_hyps = hyponyms
+
+    for child_hyp in shown_hyps:
         child_offset = child_hyp["Target"]
         edges.add((current_offset, child_offset))
-        traverse_lateral_downward(data_dict, child_offset, edges, remaining_depth - 1, visited)
+        traverse_lateral_downward(
+            data_dict, child_offset, edges, current_depth + 1, max_depth,
+            depth_limits, depth_selected, anc_level, visited, dropdown_options
+        )
 
 
 def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_depth, desc_cfg, visited_down, dropdown_options):
@@ -331,6 +375,8 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
     selected_other = set(cfg.get("selected_other_children", []))
     lateral_depth = cfg.get("depth", 0) or 0
     depth_target_offsets = set(cfg.get("depth_target_offsets", []))
+    depth_limits = cfg.get("depth_limits", {})
+    depth_selected = cfg.get("depth_selected", {})
 
     for parent_hyp in hypernyms:
         parent_offset = parent_hyp["Target"]
@@ -363,7 +409,10 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
                 else:
                     effective_depth = lateral_depth
 
-                traverse_lateral_downward(data_dict, sib_offset, edges, effective_depth, visited_lat)
+                traverse_lateral_downward(
+                    data_dict, sib_offset, edges, 1, effective_depth,
+                    depth_limits, depth_selected, current_depth, visited_lat, dropdown_options
+                )
 
             traverse_upward_new(data_dict, parent_offset, edges, current_depth + 1, max_depth, anc_cfg, visited_up, visited_lat, dropdown_options)
 
@@ -409,6 +458,39 @@ def main():
     # CONVERT LIST TO DICTIONARY FOR INSTANT O(1) LOOKUPS
     data_dict = {item["Offset"]: item for item in raw_data}
 
+    # === LIGHTWEIGHT ON-DEMAND DEPTH PICKER LOOKUP (NO GRAPHVIZ RENDER) ===
+    if query == "--depth-options" and len(sys.argv) >= 4:
+        try:
+            req_json = base64.b64decode(sys.argv[3]).decode("utf-8")
+            req = json.loads(req_json)
+        except Exception as e:
+            print(f"ERROR: Invalid depth-options config. {e}")
+            sys.exit(1)
+
+        anc_level = req.get("anc_level", 1)
+        root_offsets = req.get("root_offsets", [])
+        max_depth = req.get("max_depth", 0) or 0
+        depth_limits = req.get("depth_limits", {})
+        depth_selected = req.get("depth_selected", {})
+
+        dummy_edges = set()
+        visited_lat = set()
+        dropdown_options = {"ancestors": {}, "descendants": {}, "anc_depth": {}}
+
+        for root_off in root_offsets:
+            traverse_lateral_downward(
+                data_dict, root_off, dummy_edges, 1, max_depth,
+                depth_limits, depth_selected, anc_level, visited_lat, dropdown_options
+            )
+
+        print("DROPDOWN_OPTIONS_START")
+        for (a_lvl, depth_idx), child_map in sorted(dropdown_options["anc_depth"].items()):
+            for off in sorted(list(child_map.keys()), reverse=True):
+                display_text = format_depth_dropdown_option(data_dict, off, child_map[off]).replace("|", "/")
+                print(f"ANC_DEPTH|{a_lvl}|{depth_idx}|{off}|{display_text}")
+        print("DROPDOWN_OPTIONS_END")
+        sys.exit(0)
+
     target_synsets = find_target_synsets(data_dict, query)
     if not target_synsets:
         print(f"ERROR: Could not find '{query}' in the dataset.")
@@ -434,7 +516,7 @@ def main():
 
     target_offset = target_synset["Offset"]
     edges = set()
-    dropdown_options = {"ancestors": {}, "descendants": {}}
+    dropdown_options = {"ancestors": {}, "descendants": {}, "anc_depth": {}}
 
     if len(sys.argv) >= 5 and sys.argv[3] == "--new-filter":
         try:
@@ -510,6 +592,11 @@ def main():
                 for off in sorted(list(offsets), reverse=True):
                     display_text = format_dropdown_option(data_dict, off).replace("|", "/")
                     print(f"{group_prefix}|{level}|{off}|{display_text}")
+
+        for (anc_level, depth_idx), child_map in sorted(dropdown_options["anc_depth"].items()):
+            for off in sorted(list(child_map.keys()), reverse=True):
+                display_text = format_depth_dropdown_option(data_dict, off, child_map[off]).replace("|", "/")
+                print(f"ANC_DEPTH|{anc_level}|{depth_idx}|{off}|{display_text}")
         print("DROPDOWN_OPTIONS_END")
 
         print(f"SUCCESS:{output_path}")

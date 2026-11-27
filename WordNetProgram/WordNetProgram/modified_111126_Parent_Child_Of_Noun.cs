@@ -57,24 +57,28 @@ namespace WordNetProgram
         private const int MaxNewHierarchy = 20;
 
         private class SavedDropdownState
-		{
-			public bool IsExpanded { get; set; } = true;
+        {
+            public bool IsExpanded { get; set; } = true;
 
-			// Ancestor state
-			public bool OtherChildrenChecked { get; set; } = true;
-			public List<SynsetDropdownItem> OtherChildrenItems { get; set; } = new List<SynsetDropdownItem>();
-			public HashSet<string> CheckedOtherChildrenOffsets { get; set; } = new HashSet<string>();
+            // Ancestor state
+            public bool OtherChildrenChecked { get; set; } = true;
+            public List<SynsetDropdownItem> OtherChildrenItems { get; set; } = new List<SynsetDropdownItem>();
+            public HashSet<string> CheckedOtherChildrenOffsets { get; set; } = new HashSet<string>();
 
-			public bool DepthChecked { get; set; } = true;
-			public string DepthText { get; set; } = "0";
-			public bool ApplyDepthChecked { get; set; } = true;
-			public List<SynsetDropdownItem> SynsetItems { get; set; } = new List<SynsetDropdownItem>();
-			public HashSet<string> CheckedOffsets { get; set; } = new HashSet<string>();
+            public bool DepthChecked { get; set; } = true;
+            public string DepthText { get; set; } = "0";
+            public Dictionary<int, string> DepthLimitTexts { get; set; } = new Dictionary<int, string>();
+            public Dictionary<int, List<SynsetDropdownItem>> DepthNodeItems { get; set; } = new Dictionary<int, List<SynsetDropdownItem>>();
+            public Dictionary<int, HashSet<string>> CheckedDepthNodeOffsets { get; set; } = new Dictionary<int, HashSet<string>>();
 
-			// Descendant state
-			public bool NumberOfDescendantChecked { get; set; } = true;
-			public string NumberOfDescendantText { get; set; } = "0";
-		}
+            public bool ApplyDepthChecked { get; set; } = true;
+            public List<SynsetDropdownItem> SynsetItems { get; set; } = new List<SynsetDropdownItem>();
+            public HashSet<string> CheckedOffsets { get; set; } = new HashSet<string>();
+
+            // Descendant state
+            public bool NumberOfDescendantChecked { get; set; } = true;
+            public string NumberOfDescendantText { get; set; } = "0";
+        }
 
         private readonly Dictionary<(bool IsAncestor, int Level), SavedDropdownState> savedFilterStates = new Dictionary<(bool IsAncestor, int Level), SavedDropdownState>();
 
@@ -84,8 +88,8 @@ namespace WordNetProgram
         private string pythonScript = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\can_enter_hierarchy_number_parent_child_backend5.py";
         //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Inputs_of_Merge_Program\No_Gemini_Merged_Thai_Noun.json";
         //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Add_Thai_To_WordNet_V5(2_Sep_2026)\5.Test_Gen_Graph_14-Sep-2026\11-Oct-2026_WinForm2\Test_Case_Mammal_to_Offspring_of_Working_dog.noun.json";
-        private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\Test_Case_Whole_to_Watch_dog.json";
-        //private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Noun.json");
+        //private string jsonFile = @"C:\Users\phumi\OneDrive\Desktop\Sem2\ReadWordNetFile\WordNetProgram\WordNetProgram\Test_Case_Whole_to_Watch_dog.json";
+        private string jsonFile = System.IO.Path.Combine(AppContext.BaseDirectory, "Data", "merged_data", "merged_JSON", "Merged_Thai_Noun.json");
 
         public modified_111126_Parent_Child_Of_Noun()
         {
@@ -277,7 +281,6 @@ namespace WordNetProgram
                     IsExpanded = section.ContentPanel?.Visible ?? true
                 };
 
-                // Inside SaveCurrentNewFilterStates()
                 if (section.IsAncestor)
                 {
                     state.OtherChildrenChecked = section.ChkOtherChildren.Checked;
@@ -288,6 +291,17 @@ namespace WordNetProgram
 
                     state.DepthChecked = section.ChkDepth.Checked;
                     state.DepthText = section.TxtDepth.Text;
+                    state.DepthLimitTexts = new Dictionary<int, string>(section.DepthLimitTexts);
+
+                    state.DepthNodeItems = section.DepthNodeItems.ToDictionary(
+                        kv => kv.Key,
+                        kv => kv.Value.Select(x => new SynsetDropdownItem { Offset = x.Offset, DisplayText = x.DisplayText }).ToList()
+                    );
+                    state.CheckedDepthNodeOffsets = section.CheckedDepthNodeOffsets.ToDictionary(
+                        kv => kv.Key,
+                        kv => new HashSet<string>(kv.Value)
+                    );
+
                     state.ApplyDepthChecked = section.ChkSynsetToApplyDepth.Checked;
 
                     state.SynsetItems = section.ClbSynsetsToApplyDepth.Items
@@ -319,14 +333,24 @@ namespace WordNetProgram
             section.ContentPanel.Visible = state.IsExpanded;
             section.ChevronLabel.Text = state.IsExpanded ? "▲" : "▼";
 
-            // Inside RestoreSectionState(DropdownSection section)
             if (section.IsAncestor)
             {
                 section.ChkOtherChildren.Checked = state.OtherChildrenChecked;
                 section.PopulateOtherChildrenOptions(state.OtherChildrenItems, state.CheckedOtherChildrenOffsets);
 
                 section.ChkDepth.Checked = state.DepthChecked;
+                section.DepthLimitTexts = new Dictionary<int, string>(state.DepthLimitTexts);
+                section.DepthNodeItems = state.DepthNodeItems.ToDictionary(
+                    kv => kv.Key,
+                    kv => kv.Value.Select(x => new SynsetDropdownItem { Offset = x.Offset, DisplayText = x.DisplayText }).ToList()
+                );
+                section.CheckedDepthNodeOffsets = state.CheckedDepthNodeOffsets.ToDictionary(
+                    kv => kv.Key,
+                    kv => new HashSet<string>(kv.Value)
+                );
+
                 section.TxtDepth.Text = state.DepthText;
+                section.RebuildDepthLimitRows();
 
                 section.ChkSynsetToApplyDepth.Checked = state.ApplyDepthChecked;
 
@@ -416,7 +440,9 @@ namespace WordNetProgram
             {
                 Title = title,
                 IsAncestor = isAncestor,
-                Level = level
+                Level = level,
+                RowWidth = rowWidth,
+                OnNeedDepthOptions = FetchDepthOptionsAsync
             };
 
             // Content container
@@ -447,6 +473,30 @@ namespace WordNetProgram
                 txtDepth.Text = "0";
                 section.ChkDepth = chkDepth;
                 section.TxtDepth = txtDepth;
+
+                // Dynamic sub-panel for per-depth hybrid controls ("Depth 1 Max" + "Auto (Max) ▼" node picker)
+                section.DepthLimitsPanel = new FlowLayoutPanel
+                {
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    AutoSize = true,
+                    Margin = new Padding(0),
+                    Padding = new Padding(0),
+                    Visible = false
+                };
+                section.ContentPanel.Controls.Add(section.DepthLimitsPanel);
+
+                txtDepth.KeyPress += (s, e) =>
+                {
+                    if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+                        e.Handled = true;
+                };
+                txtDepth.TextChanged += (s, e) =>
+                {
+                    section.DepthOptionsDirty = true;
+                    section.RebuildDepthLimitRows();
+                };
+                chkDepth.CheckedChanged += (s, e) => section.DepthLimitsPanel.Enabled = chkDepth.Checked;
 
                 // Row 3: Synset to Apply Depth Multi-Select Dropdown
                 section.ContentPanel.Controls.Add(CreateSynsetToApplyDepthDropdownRow(section, rowWidth));
@@ -540,11 +590,11 @@ namespace WordNetProgram
         }
 
         private Panel CreateTextBoxRow(
-    string labelText,
-    int rowWidth,
-    out CheckBox checkBox,
-    out TextBox textBox,
-    string widthSampleText = "Other Children:")
+            string labelText,
+            int rowWidth,
+            out CheckBox checkBox,
+            out TextBox textBox,
+            string widthSampleText = "Other Children:")
         {
             Font rowFont = new Font("Segoe UI", 9f);
             int labelWidth = GetFilterLabelColumnWidth(rowFont, widthSampleText);
@@ -675,6 +725,7 @@ namespace WordNetProgram
                 }
                 section.IsUpdatingOtherChildrenChecks = false;
 
+                section.DepthOptionsDirty = true;
                 section.UpdateOtherChildrenButtonText();
                 section.SyncApplyDepthFromOtherChildren();
             };
@@ -699,6 +750,7 @@ namespace WordNetProgram
                          section.ClbOtherChildren.CheckedItems.Count == section.ClbOtherChildren.Items.Count);
                     section.IsUpdatingOtherChildrenChecks = false;
 
+                    section.DepthOptionsDirty = true;
                     section.UpdateOtherChildrenButtonText();
                     section.SyncApplyDepthFromOtherChildren();
                 }));
@@ -810,6 +862,7 @@ namespace WordNetProgram
                 }
                 section.IsUpdatingChecks = false;
 
+                section.DepthOptionsDirty = true;
                 section.UpdateSynsetToApplyDepthButtonText();
             };
 
@@ -825,6 +878,7 @@ namespace WordNetProgram
                          section.ClbSynsetsToApplyDepth.CheckedItems.Count == section.ClbSynsetsToApplyDepth.Items.Count);
                     section.IsUpdatingChecks = false;
 
+                    section.DepthOptionsDirty = true;
                     section.UpdateSynsetToApplyDepthButtonText();
                 }));
             };
@@ -894,7 +948,32 @@ namespace WordNetProgram
                 }
                 string depthTargetsJson = $"[{string.Join(",", depthTargetOffsets)}]";
 
-                return $"\"{section.Level}\":{{\"show_other_children\":{(showOther ? "true" : "false")},\"selected_other_children\":{selectedOtherJson},\"depth\":{depthVal},\"depth_target_offsets\":{depthTargetsJson}}}";
+                var depthLimitEntries = new List<string>();
+                var depthSelectedEntries = new List<string>();
+                if (section.ChkDepth.Checked && depthVal > 0)
+                {
+                    for (int d = 1; d <= depthVal; d++)
+                    {
+                        string valJson = "null"; // Blank = unlimited
+                        if (section.DepthLimitTexts.TryGetValue(d, out string rawLimit) &&
+                            int.TryParse(rawLimit?.Trim(), out int parsedLimit) &&
+                            parsedLimit >= 0)
+                        {
+                            valJson = parsedLimit.ToString();
+                        }
+                        depthLimitEntries.Add($"\"{d}\":{valJson}");
+
+                        if (section.CheckedDepthNodeOffsets.TryGetValue(d, out var pickedSet) && pickedSet.Count > 0)
+                        {
+                            string pickedJson = string.Join(",", pickedSet.Select(off => $"\"{off}\""));
+                            depthSelectedEntries.Add($"\"{d}\":[{pickedJson}]");
+                        }
+                    }
+                }
+                string depthLimitsJson = $"{{{string.Join(",", depthLimitEntries)}}}";
+                string depthSelectedJson = $"{{{string.Join(",", depthSelectedEntries)}}}";
+
+                return $"\"{section.Level}\":{{\"show_other_children\":{(showOther ? "true" : "false")},\"selected_other_children\":{selectedOtherJson},\"depth\":{depthVal},\"depth_target_offsets\":{depthTargetsJson},\"depth_limits\":{depthLimitsJson},\"depth_selected\":{depthSelectedJson}}}";
             }
 
             string FormatDescendantJson(DropdownSection section)
@@ -927,6 +1006,7 @@ namespace WordNetProgram
         private void PopulateNewFilterDropdownOptions(string pythonOutput)
         {
             var optionsBySection = new Dictionary<(bool IsAncestor, int Level), List<SynsetDropdownItem>>();
+            var depthOptionsBySection = new Dictionary<(int AncLevel, int DepthIndex), List<SynsetDropdownItem>>();
 
             if (pythonOutput.Contains("DROPDOWN_OPTIONS_START"))
             {
@@ -939,7 +1019,22 @@ namespace WordNetProgram
                     if (capture)
                     {
                         string[] fields = line.Split('|');
-                        if (fields.Length >= 4 && int.TryParse(fields[1], out int level))
+                        if (fields.Length >= 5 &&
+                            fields[0].Trim().Equals("ANC_DEPTH", StringComparison.OrdinalIgnoreCase) &&
+                            int.TryParse(fields[1], out int ancLevel) &&
+                            int.TryParse(fields[2], out int depthIdx))
+                        {
+                            var dKey = (ancLevel, depthIdx);
+                            if (!depthOptionsBySection.ContainsKey(dKey))
+                                depthOptionsBySection[dKey] = new List<SynsetDropdownItem>();
+
+                            depthOptionsBySection[dKey].Add(new SynsetDropdownItem
+                            {
+                                Offset = fields[3].Trim(),
+                                DisplayText = fields[4].Trim()
+                            });
+                        }
+                        else if (fields.Length >= 4 && int.TryParse(fields[1], out int level))
                         {
                             bool isAncestor = fields[0].Trim().Equals("ANC", StringComparison.OrdinalIgnoreCase);
                             var key = (isAncestor, level);
@@ -968,6 +1063,162 @@ namespace WordNetProgram
                     : new List<SynsetDropdownItem>();
 
                 section.PopulateOtherChildrenOptions(items);
+
+                // Refresh all depth pickers for this ancestor section (clearing stale options from previous searches)
+                var depthKeysToUpdate = new HashSet<int>(section.DepthPickers.Keys);
+                foreach (var k in section.DepthNodeItems.Keys) depthKeysToUpdate.Add(k);
+                foreach (var dKey in depthOptionsBySection.Keys.Where(x => x.AncLevel == section.Level))
+                    depthKeysToUpdate.Add(dKey.DepthIndex);
+
+                foreach (int depthIdx in depthKeysToUpdate)
+                {
+                    var dItems = depthOptionsBySection.TryGetValue((section.Level, depthIdx), out var dList)
+                        ? dList
+                        : new List<SynsetDropdownItem>();
+
+                    section.PopulateDepthNodeOptions(depthIdx, dItems);
+                }
+
+                section.DepthOptionsDirty = false;
+            }
+        }
+
+        private async Task FetchDepthOptionsAsync(DropdownSection section)
+        {
+            if (section == null || !section.IsAncestor) return;
+
+            int depthVal = 0;
+            if (int.TryParse(section.TxtDepth.Text.Trim(), out int parsedDepth) && parsedDepth > 0)
+            {
+                depthVal = Math.Min(parsedDepth, MaxNewHierarchy);
+            }
+            if (depthVal <= 0) return;
+
+            // Use checked Apply Depth synsets if any are checked; otherwise use all checked Other Children
+            List<string> rootOffsets;
+            if (section.ChkSynsetToApplyDepth.Checked && section.ClbSynsetsToApplyDepth.CheckedItems.Count > 0)
+            {
+                rootOffsets = section.ClbSynsetsToApplyDepth.CheckedItems
+                    .OfType<SynsetDropdownItem>()
+                    .Select(x => x.Offset)
+                    .ToList();
+            }
+            else
+            {
+                rootOffsets = section.CheckedOtherChildrenOffsets.ToList();
+            }
+
+            if (rootOffsets.Count == 0)
+            {
+                for (int d = 1; d <= depthVal; d++)
+                    section.PopulateDepthNodeOptions(d, new List<SynsetDropdownItem>());
+                section.DepthOptionsDirty = false;
+                return;
+            }
+
+            string rootsJson = $"[{string.Join(",", rootOffsets.Select(off => $"\"{off}\""))}]";
+
+            var depthLimitEntries = new List<string>();
+            var depthSelectedEntries = new List<string>();
+            for (int d = 1; d <= depthVal; d++)
+            {
+                string valJson = "null";
+                if (section.DepthLimitTexts.TryGetValue(d, out string rawLimit) &&
+                    int.TryParse(rawLimit?.Trim(), out int parsedLimit) &&
+                    parsedLimit >= 0)
+                {
+                    valJson = parsedLimit.ToString();
+                }
+                depthLimitEntries.Add($"\"{d}\":{valJson}");
+
+                if (section.CheckedDepthNodeOffsets.TryGetValue(d, out var pickedSet) && pickedSet.Count > 0)
+                {
+                    string pickedJson = string.Join(",", pickedSet.Select(off => $"\"{off}\""));
+                    depthSelectedEntries.Add($"\"{d}\":[{pickedJson}]");
+                }
+            }
+
+            string json = $"{{\"anc_level\":{section.Level}," +
+                          $"\"root_offsets\":{rootsJson}," +
+                          $"\"max_depth\":{depthVal}," +
+                          $"\"depth_limits\":{{{string.Join(",", depthLimitEntries)}}}," +
+                          $"\"depth_selected\":{{{string.Join(",", depthSelectedEntries)}}}}}";
+
+            string configBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+            string args = $"\"{jsonFile}\" --depth-options {configBase64}";
+
+            try
+            {
+                this.Cursor = Cursors.WaitCursor;
+
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = "python",
+                    Arguments = $"\"{pythonScript}\" {args}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.UTF8
+                };
+
+                string output = "";
+                await Task.Run(() =>
+                {
+                    using (Process process = Process.Start(startInfo))
+                    {
+                        output = process.StandardOutput.ReadToEnd();
+                        process.WaitForExit();
+                    }
+                });
+
+                var depthOptions = new Dictionary<int, List<SynsetDropdownItem>>();
+                if (output.Contains("DROPDOWN_OPTIONS_START"))
+                {
+                    string[] lines = output.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    bool capture = false;
+
+                    foreach (string line in lines)
+                    {
+                        if (line == "DROPDOWN_OPTIONS_END") capture = false;
+                        if (capture)
+                        {
+                            string[] fields = line.Split('|');
+                            if (fields.Length >= 5 &&
+                                fields[0].Trim().Equals("ANC_DEPTH", StringComparison.OrdinalIgnoreCase) &&
+                                int.TryParse(fields[2], out int depthIdx))
+                            {
+                                if (!depthOptions.ContainsKey(depthIdx))
+                                    depthOptions[depthIdx] = new List<SynsetDropdownItem>();
+
+                                depthOptions[depthIdx].Add(new SynsetDropdownItem
+                                {
+                                    Offset = fields[3].Trim(),
+                                    DisplayText = fields[4].Trim()
+                                });
+                            }
+                        }
+                        if (line == "DROPDOWN_OPTIONS_START") capture = true;
+                    }
+                }
+
+                for (int d = 1; d <= depthVal; d++)
+                {
+                    var items = depthOptions.TryGetValue(d, out var list)
+                        ? list
+                        : new List<SynsetDropdownItem>();
+                    section.PopulateDepthNodeOptions(d, items);
+                }
+
+                section.DepthOptionsDirty = false;
+            }
+            catch
+            {
+                // Ignore transient lookup errors
+            }
+            finally
+            {
+                this.Cursor = Cursors.Default;
             }
         }
 
@@ -1007,11 +1258,29 @@ namespace WordNetProgram
             }
         }
 
+        private class DepthPickerControl : IDisposable
+        {
+            public Button BtnPick { get; set; }
+            public ToolStripDropDown Popup { get; set; }
+            public TextBox TxtSearch { get; set; }
+            public CheckBox ChkSelectAll { get; set; }
+            public CheckedListBox ClbNodes { get; set; }
+            public bool IsUpdatingChecks { get; set; }
+
+            public void Dispose()
+            {
+                Popup?.Dispose();
+            }
+        }
+
         private class DropdownSection : IDisposable
         {
             public string Title { get; set; }
             public bool IsAncestor { get; set; }
             public int Level { get; set; }
+            public int RowWidth { get; set; }
+            public bool DepthOptionsDirty { get; set; } = true;
+            public Func<DropdownSection, Task> OnNeedDepthOptions { get; set; }
 
             public Panel HeaderPanel { get; set; }
             public Panel ContentPanel { get; set; }
@@ -1028,9 +1297,14 @@ namespace WordNetProgram
             public HashSet<string> CheckedOtherChildrenOffsets { get; set; } = new HashSet<string>();
             public bool IsUpdatingOtherChildrenChecks { get; set; }
 
-            // Ancestor: Depth controls
+            // Ancestor: Depth controls (Hybrid numeric Max + optional searchable node picker per depth)
             public CheckBox ChkDepth { get; set; }
             public TextBox TxtDepth { get; set; }
+            public FlowLayoutPanel DepthLimitsPanel { get; set; }
+            public Dictionary<int, string> DepthLimitTexts { get; set; } = new Dictionary<int, string>();
+            public Dictionary<int, List<SynsetDropdownItem>> DepthNodeItems { get; set; } = new Dictionary<int, List<SynsetDropdownItem>>();
+            public Dictionary<int, HashSet<string>> CheckedDepthNodeOffsets { get; set; } = new Dictionary<int, HashSet<string>>();
+            public Dictionary<int, DepthPickerControl> DepthPickers { get; set; } = new Dictionary<int, DepthPickerControl>();
 
             public CheckBox ChkSynsetToApplyDepth { get; set; }
             public Button BtnSynsetToApplyDepth { get; set; }
@@ -1042,6 +1316,310 @@ namespace WordNetProgram
             // Descendant controls
             public CheckBox ChkNumberOfDescendant { get; set; }
             public TextBox TbNumberOfDescendant { get; set; }
+
+            private void DisposeDepthPickers()
+            {
+                foreach (var picker in DepthPickers.Values)
+                {
+                    picker.Dispose();
+                }
+                DepthPickers.Clear();
+            }
+
+            public void RebuildDepthLimitRows()
+            {
+                if (DepthLimitsPanel == null || TxtDepth == null) return;
+
+                int depth = 0;
+                if (int.TryParse(TxtDepth.Text.Trim(), out int parsed) && parsed > 0)
+                {
+                    depth = Math.Min(parsed, MaxNewHierarchy);
+                }
+
+                DepthLimitsPanel.SuspendLayout();
+                DisposeDepthPickers();
+
+                while (DepthLimitsPanel.Controls.Count > 0)
+                {
+                    Control c = DepthLimitsPanel.Controls[0];
+                    DepthLimitsPanel.Controls.RemoveAt(0);
+                    c.Dispose();
+                }
+
+                if (depth > 0)
+                {
+                    Font rowFont = new Font("Segoe UI", 8.5f);
+                    int indentLeft = 32;
+                    int labelWidth = 78;
+                    int maxInputLeft = indentLeft + labelWidth + 4;
+                    int maxInputWidth = 38;
+                    int pickerLeft = maxInputLeft + maxInputWidth + 6;
+                    int pickerWidth = Math.Max(110, RowWidth - pickerLeft - 15);
+                    int popupWidth = Math.Max(pickerWidth, 380);
+
+                    for (int d = 1; d <= depth; d++)
+                    {
+                        int depthIndex = d;
+
+                        // Default to "3" nodes per depth so large graphs stay readable (blank = unlimited)
+                        if (!DepthLimitTexts.ContainsKey(depthIndex))
+                            DepthLimitTexts[depthIndex] = "3";
+                        if (!DepthNodeItems.ContainsKey(depthIndex))
+                            DepthNodeItems[depthIndex] = new List<SynsetDropdownItem>();
+                        if (!CheckedDepthNodeOffsets.ContainsKey(depthIndex))
+                            CheckedDepthNodeOffsets[depthIndex] = new HashSet<string>();
+
+                        Panel subRow = new Panel
+                        {
+                            Size = new Size(RowWidth, 34),
+                            BackColor = Color.White,
+                            Margin = new Padding(0)
+                        };
+
+                        Label lbl = new Label
+                        {
+                            Text = $"Depth {depthIndex} Max:",
+                            AutoSize = true,
+                            Location = new Point(indentLeft, 9),
+                            ForeColor = Color.FromArgb(80, 80, 80),
+                            Font = rowFont
+                        };
+
+                        TextBox tb = new TextBox
+                        {
+                            Location = new Point(maxInputLeft, 6),
+                            Width = maxInputWidth,
+                            Font = rowFont,
+                            Text = DepthLimitTexts[depthIndex]
+                        };
+
+                        tb.KeyPress += (s, e) =>
+                        {
+                            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+                                e.Handled = true;
+                        };
+
+                        tb.TextChanged += (s, e) =>
+                        {
+                            DepthLimitTexts[depthIndex] = tb.Text.Trim();
+                        };
+
+                        // Optional searchable multi-select node picker for this depth
+                        var picker = new DepthPickerControl();
+                        picker.BtnPick = new Button
+                        {
+                            Text = "Auto (Max) ▼",
+                            Location = new Point(pickerLeft, 4),
+                            Size = new Size(pickerWidth, 26),
+                            TextAlign = ContentAlignment.MiddleLeft,
+                            BackColor = Color.White,
+                            FlatStyle = FlatStyle.Standard,
+                            Font = rowFont
+                        };
+
+                        Panel popupPanel = new Panel
+                        {
+                            Size = new Size(popupWidth, 252),
+                            BackColor = Color.White
+                        };
+
+                        picker.TxtSearch = new TextBox
+                        {
+                            Location = new Point(6, 6),
+                            Width = popupWidth - 12,
+                            Font = new Font("Tahoma", 9f)
+                        };
+
+                        picker.ChkSelectAll = new CheckBox
+                        {
+                            Text = "Select / Unselect Visible (None = Use Max)",
+                            Location = new Point(8, 34),
+                            AutoSize = true,
+                            Font = new Font("Segoe UI", 8.5f, FontStyle.Bold)
+                        };
+
+                        picker.ClbNodes = new CheckedListBox
+                        {
+                            Location = new Point(4, 58),
+                            Size = new Size(popupWidth - 8, 188),
+                            CheckOnClick = true,
+                            HorizontalScrollbar = true,
+                            BorderStyle = BorderStyle.FixedSingle,
+                            Font = new Font("Tahoma", 8.5f)
+                        };
+
+                        picker.TxtSearch.TextChanged += (s, e) =>
+                        {
+                            ApplyDepthSearchFilter(depthIndex, picker.TxtSearch.Text);
+                        };
+
+                        picker.ChkSelectAll.CheckedChanged += (s, e) =>
+                        {
+                            if (picker.IsUpdatingChecks) return;
+
+                            picker.IsUpdatingChecks = true;
+                            bool checkAll = picker.ChkSelectAll.Checked;
+                            var checkedSet = CheckedDepthNodeOffsets[depthIndex];
+                            for (int i = 0; i < picker.ClbNodes.Items.Count; i++)
+                            {
+                                picker.ClbNodes.SetItemChecked(i, checkAll);
+                                if (picker.ClbNodes.Items[i] is SynsetDropdownItem synItem)
+                                {
+                                    if (checkAll) checkedSet.Add(synItem.Offset);
+                                    else checkedSet.Remove(synItem.Offset);
+                                }
+                            }
+                            picker.IsUpdatingChecks = false;
+
+                            DepthOptionsDirty = true;
+                            UpdateDepthPickerButtonText(depthIndex);
+                        };
+
+                        picker.ClbNodes.ItemCheck += (s, e) =>
+                        {
+                            if (picker.IsUpdatingChecks) return;
+
+                            var checkedSet = CheckedDepthNodeOffsets[depthIndex];
+                            if (picker.ClbNodes.Items[e.Index] is SynsetDropdownItem synItem)
+                            {
+                                if (e.NewValue == CheckState.Checked)
+                                    checkedSet.Add(synItem.Offset);
+                                else
+                                    checkedSet.Remove(synItem.Offset);
+                            }
+
+                            picker.ClbNodes.BeginInvoke((Action)(() =>
+                            {
+                                picker.IsUpdatingChecks = true;
+                                picker.ChkSelectAll.Checked =
+                                    (picker.ClbNodes.Items.Count > 0 &&
+                                     picker.ClbNodes.CheckedItems.Count == picker.ClbNodes.Items.Count);
+                                picker.IsUpdatingChecks = false;
+
+                                DepthOptionsDirty = true;
+                                UpdateDepthPickerButtonText(depthIndex);
+                            }));
+                        };
+
+                        popupPanel.Controls.Add(picker.TxtSearch);
+                        popupPanel.Controls.Add(picker.ChkSelectAll);
+                        popupPanel.Controls.Add(picker.ClbNodes);
+
+                        ToolStripControlHost host = new ToolStripControlHost(popupPanel)
+                        {
+                            Margin = Padding.Empty,
+                            Padding = Padding.Empty,
+                            AutoSize = false,
+                            Size = popupPanel.Size
+                        };
+
+                        picker.Popup = new ToolStripDropDown
+                        {
+                            Margin = Padding.Empty,
+                            Padding = Padding.Empty,
+                            AutoClose = true
+                        };
+                        picker.Popup.Items.Add(host);
+
+                        picker.BtnPick.Click += async (s, e) =>
+                        {
+                            if (DepthOptionsDirty && OnNeedDepthOptions != null)
+                            {
+                                await OnNeedDepthOptions(this);
+                            }
+
+                            picker.Popup.Show(
+                                picker.BtnPick,
+                                new Point(0, picker.BtnPick.Height));
+                            picker.TxtSearch.Focus();
+                        };
+
+                        DepthPickers[depthIndex] = picker;
+                        ApplyDepthSearchFilter(depthIndex, string.Empty);
+                        UpdateDepthPickerButtonText(depthIndex);
+
+                        subRow.Controls.Add(lbl);
+                        subRow.Controls.Add(tb);
+                        subRow.Controls.Add(picker.BtnPick);
+                        DepthLimitsPanel.Controls.Add(subRow);
+                    }
+
+                    DepthLimitsPanel.Visible = true;
+                    DepthLimitsPanel.Enabled = ChkDepth?.Checked ?? true;
+                }
+                else
+                {
+                    DepthLimitsPanel.Visible = false;
+                }
+
+                DepthLimitsPanel.ResumeLayout(true);
+            }
+
+            public void UpdateDepthPickerButtonText(int depthIndex)
+            {
+                if (!DepthPickers.TryGetValue(depthIndex, out var picker) || picker.BtnPick == null) return;
+
+                int total = DepthNodeItems.TryGetValue(depthIndex, out var list) ? list.Count : 0;
+                int count = CheckedDepthNodeOffsets.TryGetValue(depthIndex, out var set) ? set.Count : 0;
+
+                if (total == 0)
+                    picker.BtnPick.Text = "Auto (Max) ▼";
+                else if (count == 0)
+                    picker.BtnPick.Text = $"Auto ({total} avail) ▼";
+                else if (count == total)
+                    picker.BtnPick.Text = $"All ({total}) Picked ▼";
+                else
+                    picker.BtnPick.Text = $"{count}/{total} Picked ▼";
+            }
+
+            public void ApplyDepthSearchFilter(int depthIndex, string searchText)
+            {
+                if (!DepthPickers.TryGetValue(depthIndex, out var picker) || picker.ClbNodes == null) return;
+
+                string filter = (searchText ?? string.Empty).Trim();
+                var items = DepthNodeItems.TryGetValue(depthIndex, out var list) ? list : new List<SynsetDropdownItem>();
+                var checkedSet = CheckedDepthNodeOffsets.TryGetValue(depthIndex, out var set) ? set : new HashSet<string>();
+
+                picker.IsUpdatingChecks = true;
+                picker.ClbNodes.Items.Clear();
+
+                foreach (var item in items)
+                {
+                    if (string.IsNullOrEmpty(filter) ||
+                        item.DisplayText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        bool isChecked = checkedSet.Contains(item.Offset);
+                        picker.ClbNodes.Items.Add(item, isChecked);
+                    }
+                }
+
+                picker.ChkSelectAll.Checked =
+                    (picker.ClbNodes.Items.Count > 0 &&
+                     picker.ClbNodes.CheckedItems.Count == picker.ClbNodes.Items.Count);
+                picker.IsUpdatingChecks = false;
+            }
+
+            public void PopulateDepthNodeOptions(int depthIndex, List<SynsetDropdownItem> items)
+            {
+                var validOffsets = new HashSet<string>(items.Select(x => x.Offset));
+                DepthNodeItems[depthIndex] = items.ToList();
+
+                if (!CheckedDepthNodeOffsets.ContainsKey(depthIndex))
+                    CheckedDepthNodeOffsets[depthIndex] = new HashSet<string>();
+
+                CheckedDepthNodeOffsets[depthIndex] = new HashSet<string>(
+                    CheckedDepthNodeOffsets[depthIndex].Where(off => validOffsets.Contains(off))
+                );
+
+                if (DepthPickers.TryGetValue(depthIndex, out var picker))
+                {
+                    if (picker.TxtSearch != null)
+                        picker.TxtSearch.Text = string.Empty;
+
+                    ApplyDepthSearchFilter(depthIndex, string.Empty);
+                    UpdateDepthPickerButtonText(depthIndex);
+                }
+            }
 
             public void UpdateOtherChildrenButtonText()
             {
@@ -1153,6 +1731,7 @@ namespace WordNetProgram
 
             public void Dispose()
             {
+                DisposeDepthPickers();
                 OtherChildrenPopup?.Dispose();
                 SynsetToApplyDepthPopup?.Dispose();
                 HeaderPanel?.Dispose();
