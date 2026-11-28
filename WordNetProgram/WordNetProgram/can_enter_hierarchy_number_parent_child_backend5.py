@@ -264,7 +264,7 @@ def build_family_tree_edges(
 # ==========================================
 def traverse_lateral_downward(
     data_dict, current_offset, edges, current_depth, max_depth,
-    depth_limits, depth_selected, anc_level, visited, dropdown_options
+    depth_selected, anc_level, visited, dropdown_options
 ):
     if (anc_level, current_offset, current_depth) in visited:
         return
@@ -287,7 +287,7 @@ def traverse_lateral_downward(
     for hyp in hyponyms:
         depth_bucket.setdefault(hyp["Target"], set()).add(current_offset)
 
-    # Hybrid selection: if user picked specific nodes for this depth, use them; otherwise use numeric limit
+    # If user picked specific nodes for this depth, show only those; otherwise show all
     selected_at_depth = set(depth_selected.get(str(current_depth), [])) if depth_selected else set()
     if selected_at_depth:
         shown_hyps = [h for h in hyponyms if h["Target"] in selected_at_depth]
@@ -295,21 +295,14 @@ def traverse_lateral_downward(
         if remaining > 0:
             edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
     else:
-        limit = depth_limits.get(str(current_depth), None) if depth_limits else None
-        if limit is not None and len(hyponyms) > limit:
-            shown_hyps = hyponyms[:limit]
-            remaining = len(hyponyms) - limit
-            if remaining > 0:
-                edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
-        else:
-            shown_hyps = hyponyms
+        shown_hyps = hyponyms
 
     for child_hyp in shown_hyps:
         child_offset = child_hyp["Target"]
         edges.add((current_offset, child_offset))
         traverse_lateral_downward(
             data_dict, child_offset, edges, current_depth + 1, max_depth,
-            depth_limits, depth_selected, anc_level, visited, dropdown_options
+            depth_selected, anc_level, visited, dropdown_options
         )
 
 
@@ -375,7 +368,6 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
     selected_other = set(cfg.get("selected_other_children", []))
     lateral_depth = cfg.get("depth", 0) or 0
     depth_target_offsets = set(cfg.get("depth_target_offsets", []))
-    depth_limits = cfg.get("depth_limits", {})
     depth_selected = cfg.get("depth_selected", {})
 
     for parent_hyp in hypernyms:
@@ -410,9 +402,9 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
                     effective_depth = lateral_depth
 
                 traverse_lateral_downward(
-                    data_dict, sib_offset, edges, 1, effective_depth,
-                    depth_limits, depth_selected, current_depth, visited_lat, dropdown_options
-                )
+                 data_dict, sib_offset, edges, 1, effective_depth,
+                 depth_selected, current_depth, visited_lat, dropdown_options
+             )
 
             traverse_upward_new(data_dict, parent_offset, edges, current_depth + 1, max_depth, anc_cfg, visited_up, visited_lat, dropdown_options)
 
@@ -470,7 +462,6 @@ def main():
         anc_level = req.get("anc_level", 1)
         root_offsets = req.get("root_offsets", [])
         max_depth = req.get("max_depth", 0) or 0
-        depth_limits = req.get("depth_limits", {})
         depth_selected = req.get("depth_selected", {})
 
         dummy_edges = set()
@@ -478,10 +469,10 @@ def main():
         dropdown_options = {"ancestors": {}, "descendants": {}, "anc_depth": {}}
 
         for root_off in root_offsets:
-            traverse_lateral_downward(
-                data_dict, root_off, dummy_edges, 1, max_depth,
-                depth_limits, depth_selected, anc_level, visited_lat, dropdown_options
-            )
+         traverse_lateral_downward(
+             data_dict, root_off, dummy_edges, 1, max_depth,
+             depth_selected, anc_level, visited_lat, dropdown_options
+         )
 
         print("DROPDOWN_OPTIONS_START")
         for (a_lvl, depth_idx), child_map in sorted(dropdown_options["anc_depth"].items()):

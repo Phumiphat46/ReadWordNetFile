@@ -89,7 +89,6 @@ namespace WordNetProgram
 
             public bool DepthChecked { get; set; } = true;
             public string DepthText { get; set; } = "0";
-            public Dictionary<int, string> DepthLimitTexts { get; set; } = new Dictionary<int, string>();
             public Dictionary<int, List<SynsetDropdownItem>> DepthNodeItems { get; set; } = new Dictionary<int, List<SynsetDropdownItem>>();
             public Dictionary<int, HashSet<string>> CheckedDepthNodeOffsets { get; set; } = new Dictionary<int, HashSet<string>>();
 
@@ -313,7 +312,6 @@ namespace WordNetProgram
 
                     state.DepthChecked = section.ChkDepth.Checked;
                     state.DepthText = section.TxtDepth.Text;
-                    state.DepthLimitTexts = new Dictionary<int, string>(section.DepthLimitTexts);
 
                     state.DepthNodeItems = section.DepthNodeItems.ToDictionary(
                         kv => kv.Key,
@@ -361,7 +359,6 @@ namespace WordNetProgram
                 section.PopulateOtherChildrenOptions(state.OtherChildrenItems, state.CheckedOtherChildrenOffsets);
 
                 section.ChkDepth.Checked = state.DepthChecked;
-                section.DepthLimitTexts = new Dictionary<int, string>(state.DepthLimitTexts);
                 section.DepthNodeItems = state.DepthNodeItems.ToDictionary(
                     kv => kv.Key,
                     kv => kv.Value.Select(x => new SynsetDropdownItem { Offset = x.Offset, DisplayText = x.DisplayText }).ToList()
@@ -496,7 +493,7 @@ namespace WordNetProgram
                 section.ChkDepth = chkDepth;
                 section.TxtDepth = txtDepth;
 
-                // Dynamic sub-panel for per-depth hybrid controls ("Depth 1 Max" + "Auto (Max) ▼" node picker)
+                // Dynamic sub-panel for per-depth node pickers ("Depth 1:", "Depth 2:", ...)
                 section.DepthLimitsPanel = new FlowLayoutPanel
                 {
                     FlowDirection = FlowDirection.TopDown,
@@ -970,21 +967,11 @@ namespace WordNetProgram
                 }
                 string depthTargetsJson = $"[{string.Join(",", depthTargetOffsets)}]";
 
-                var depthLimitEntries = new List<string>();
                 var depthSelectedEntries = new List<string>();
                 if (section.ChkDepth.Checked && depthVal > 0)
                 {
                     for (int d = 1; d <= depthVal; d++)
                     {
-                        string valJson = "null"; // Blank = unlimited
-                        if (section.DepthLimitTexts.TryGetValue(d, out string rawLimit) &&
-                            int.TryParse(rawLimit?.Trim(), out int parsedLimit) &&
-                            parsedLimit >= 0)
-                        {
-                            valJson = parsedLimit.ToString();
-                        }
-                        depthLimitEntries.Add($"\"{d}\":{valJson}");
-
                         if (section.CheckedDepthNodeOffsets.TryGetValue(d, out var pickedSet) && pickedSet.Count > 0)
                         {
                             string pickedJson = string.Join(",", pickedSet.Select(off => $"\"{off}\""));
@@ -992,10 +979,9 @@ namespace WordNetProgram
                         }
                     }
                 }
-                string depthLimitsJson = $"{{{string.Join(",", depthLimitEntries)}}}";
                 string depthSelectedJson = $"{{{string.Join(",", depthSelectedEntries)}}}";
 
-                return $"\"{section.Level}\":{{\"show_other_children\":{(showOther ? "true" : "false")},\"selected_other_children\":{selectedOtherJson},\"depth\":{depthVal},\"depth_target_offsets\":{depthTargetsJson},\"depth_limits\":{depthLimitsJson},\"depth_selected\":{depthSelectedJson}}}";
+                return $"\"{section.Level}\":{{\"show_other_children\":{(showOther ? "true" : "false")},\"selected_other_children\":{selectedOtherJson},\"depth\":{depthVal},\"depth_target_offsets\":{depthTargetsJson},\"depth_selected\":{depthSelectedJson}}}";
             }
 
             string FormatDescendantJson(DropdownSection section)
@@ -1140,19 +1126,9 @@ namespace WordNetProgram
 
             string rootsJson = $"[{string.Join(",", rootOffsets.Select(off => $"\"{off}\""))}]";
 
-            var depthLimitEntries = new List<string>();
             var depthSelectedEntries = new List<string>();
             for (int d = 1; d <= depthVal; d++)
             {
-                string valJson = "null";
-                if (section.DepthLimitTexts.TryGetValue(d, out string rawLimit) &&
-                    int.TryParse(rawLimit?.Trim(), out int parsedLimit) &&
-                    parsedLimit >= 0)
-                {
-                    valJson = parsedLimit.ToString();
-                }
-                depthLimitEntries.Add($"\"{d}\":{valJson}");
-
                 if (section.CheckedDepthNodeOffsets.TryGetValue(d, out var pickedSet) && pickedSet.Count > 0)
                 {
                     string pickedJson = string.Join(",", pickedSet.Select(off => $"\"{off}\""));
@@ -1163,7 +1139,6 @@ namespace WordNetProgram
             string json = $"{{\"anc_level\":{section.Level}," +
                           $"\"root_offsets\":{rootsJson}," +
                           $"\"max_depth\":{depthVal}," +
-                          $"\"depth_limits\":{{{string.Join(",", depthLimitEntries)}}}," +
                           $"\"depth_selected\":{{{string.Join(",", depthSelectedEntries)}}}}}";
 
             string configBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
@@ -1319,11 +1294,10 @@ namespace WordNetProgram
             public HashSet<string> CheckedOtherChildrenOffsets { get; set; } = new HashSet<string>();
             public bool IsUpdatingOtherChildrenChecks { get; set; }
 
-            // Ancestor: Depth controls (Hybrid numeric Max + optional searchable node picker per depth)
+            // Ancestor: Depth controls (Searchable node picker per depth)
             public CheckBox ChkDepth { get; set; }
             public TextBox TxtDepth { get; set; }
             public FlowLayoutPanel DepthLimitsPanel { get; set; }
-            public Dictionary<int, string> DepthLimitTexts { get; set; } = new Dictionary<int, string>();
             public Dictionary<int, List<SynsetDropdownItem>> DepthNodeItems { get; set; } = new Dictionary<int, List<SynsetDropdownItem>>();
             public Dictionary<int, HashSet<string>> CheckedDepthNodeOffsets { get; set; } = new Dictionary<int, HashSet<string>>();
             public Dictionary<int, DepthPickerControl> DepthPickers { get; set; } = new Dictionary<int, DepthPickerControl>();
@@ -1372,12 +1346,10 @@ namespace WordNetProgram
                 {
                     Font rowFont = new Font("Segoe UI", 8.5f);
                     int indentLeft = 28;
-                    string widestLabel = $"Depth {depth} Max:";
+                    string widestLabel = $"Depth {depth}:";
                     int labelWidth = TextRenderer.MeasureText(widestLabel, rowFont).Width + 12;
-                    int maxInputLeft = indentLeft + labelWidth + 6;
-                    int maxInputWidth = 42;
-                    int pickerLeft = maxInputLeft + maxInputWidth + 6;
-                    int pickerWidth = Math.Max(100, RowWidth - pickerLeft - 15);
+                    int pickerLeft = indentLeft + labelWidth + 6;
+                    int pickerWidth = Math.Max(120, RowWidth - pickerLeft - 15);
                     int actualRowWidth = Math.Max(RowWidth, pickerLeft + pickerWidth + 10);
                     int popupWidth = Math.Max(pickerWidth, 380);
 
@@ -1385,9 +1357,6 @@ namespace WordNetProgram
                     {
                         int depthIndex = d;
 
-                        // Default to "3" nodes per depth so large graphs stay readable (blank = unlimited)
-                        if (!DepthLimitTexts.ContainsKey(depthIndex))
-                            DepthLimitTexts[depthIndex] = "3";
                         if (!DepthNodeItems.ContainsKey(depthIndex))
                             DepthNodeItems[depthIndex] = new List<SynsetDropdownItem>();
                         if (!CheckedDepthNodeOffsets.ContainsKey(depthIndex))
@@ -1402,37 +1371,18 @@ namespace WordNetProgram
 
                         Label lbl = new Label
                         {
-                            Text = $"Depth {depthIndex} Max:",
+                            Text = $"Depth {depthIndex}:",
                             AutoSize = true,
                             Location = new Point(indentLeft, 9),
                             ForeColor = Color.FromArgb(80, 80, 80),
                             Font = rowFont
                         };
 
-                        TextBox tb = new TextBox
-                        {
-                            Location = new Point(maxInputLeft, 6),
-                            Width = maxInputWidth,
-                            Font = rowFont,
-                            Text = DepthLimitTexts[depthIndex]
-                        };
-
-                        tb.KeyPress += (s, e) =>
-                        {
-                            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
-                                e.Handled = true;
-                        };
-
-                        tb.TextChanged += (s, e) =>
-                        {
-                            DepthLimitTexts[depthIndex] = tb.Text.Trim();
-                        };
-
-                        // Optional searchable multi-select node picker for this depth
+                        // Searchable multi-select node picker for this depth
                         var picker = new DepthPickerControl();
                         picker.BtnPick = new Button
                         {
-                            Text = "Auto (Max) ▼",
+                            Text = "Choose Nodes (All) ▼",
                             Location = new Point(pickerLeft, 4),
                             Size = new Size(pickerWidth, 26),
                             TextAlign = ContentAlignment.MiddleLeft,
@@ -1456,7 +1406,7 @@ namespace WordNetProgram
 
                         picker.ChkSelectAll = new CheckBox
                         {
-                            Text = "Select / Unselect Visible (None = Use Max)",
+                            Text = "Select / Unselect Visible (None = Show All)",
                             Location = new Point(8, 34),
                             AutoSize = true,
                             Font = new Font("Segoe UI", 8.5f, FontStyle.Bold)
@@ -1607,7 +1557,6 @@ namespace WordNetProgram
                         UpdateDepthPickerButtonText(depthIndex);
 
                         subRow.Controls.Add(lbl);
-                        subRow.Controls.Add(tb);
                         subRow.Controls.Add(picker.BtnPick);
                         DepthLimitsPanel.Controls.Add(subRow);
                     }
@@ -1631,9 +1580,9 @@ namespace WordNetProgram
                 int count = CheckedDepthNodeOffsets.TryGetValue(depthIndex, out var set) ? set.Count : 0;
 
                 if (total == 0)
-                    picker.BtnPick.Text = "Auto (Max) ▼";
+                    picker.BtnPick.Text = "Choose Nodes (All) ▼";
                 else if (count == 0)
-                    picker.BtnPick.Text = $"Auto ({total} avail) ▼";
+                    picker.BtnPick.Text = $"All ({total} avail) ▼";
                 else if (count == total)
                     picker.BtnPick.Text = $"All ({total}) Picked ▼";
                 else
