@@ -92,10 +92,6 @@ namespace WordNetProgram
             public Dictionary<int, List<SynsetDropdownItem>> DepthNodeItems { get; set; } = new Dictionary<int, List<SynsetDropdownItem>>();
             public Dictionary<int, HashSet<string>> CheckedDepthNodeOffsets { get; set; } = new Dictionary<int, HashSet<string>>();
 
-            public bool ApplyDepthChecked { get; set; } = true;
-            public List<SynsetDropdownItem> SynsetItems { get; set; } = new List<SynsetDropdownItem>();
-            public HashSet<string> CheckedOffsets { get; set; } = new HashSet<string>();
-
             // Descendant state
             public bool DescendantNodesChecked { get; set; } = true;
             public List<SynsetDropdownItem> DescendantNodeItems { get; set; } = new List<SynsetDropdownItem>();
@@ -322,19 +318,6 @@ namespace WordNetProgram
                         kv => kv.Key,
                         kv => new HashSet<string>(kv.Value)
                     );
-
-                    state.ApplyDepthChecked = section.ChkSynsetToApplyDepth.Checked;
-
-                    state.SynsetItems = section.ClbSynsetsToApplyDepth.Items
-                        .OfType<SynsetDropdownItem>()
-                        .Select(x => new SynsetDropdownItem { Offset = x.Offset, DisplayText = x.DisplayText })
-                        .ToList();
-
-                    state.CheckedOffsets = new HashSet<string>(
-                        section.ClbSynsetsToApplyDepth.CheckedItems
-                            .OfType<SynsetDropdownItem>()
-                            .Select(x => x.Offset)
-                    );
                 }
                 else
                 {
@@ -374,20 +357,6 @@ namespace WordNetProgram
 
                 section.TxtDepth.Text = state.DepthText;
                 section.RebuildDepthLimitRows();
-
-                section.ChkSynsetToApplyDepth.Checked = state.ApplyDepthChecked;
-
-                section.IsUpdatingChecks = true;
-                section.ClbSynsetsToApplyDepth.Items.Clear();
-                foreach (var item in state.SynsetItems)
-                {
-                    bool isChecked = state.CheckedOffsets.Contains(item.Offset);
-                    section.ClbSynsetsToApplyDepth.Items.Add(item, isChecked);
-                }
-                section.ChkSelectAll.Checked = (section.ClbSynsetsToApplyDepth.Items.Count > 0 &&
-                                                section.ClbSynsetsToApplyDepth.CheckedItems.Count == section.ClbSynsetsToApplyDepth.Items.Count);
-                section.IsUpdatingChecks = false;
-                section.UpdateSynsetToApplyDepthButtonText();
             }
             else
             {
@@ -529,9 +498,6 @@ namespace WordNetProgram
                     section.RebuildDepthLimitRows();
                 };
                 chkDepth.CheckedChanged += (s, e) => section.DepthLimitsPanel.Enabled = chkDepth.Checked;
-
-                // Row 3: Synset to Apply Depth Multi-Select Dropdown
-                section.ContentPanel.Controls.Add(CreateSynsetToApplyDepthDropdownRow(section, rowWidth));
             }
             else
             {
@@ -958,7 +924,6 @@ namespace WordNetProgram
 
                 section.DepthOptionsDirty = true;
                 section.UpdateOtherChildrenButtonText();
-                section.SyncApplyDepthFromOtherChildren();
             };
 
             section.ClbOtherChildren.ItemCheck += (s, e) =>
@@ -983,7 +948,6 @@ namespace WordNetProgram
 
                     section.DepthOptionsDirty = true;
                     section.UpdateOtherChildrenButtonText();
-                    section.SyncApplyDepthFromOtherChildren();
                 }));
             };
 
@@ -1020,131 +984,6 @@ namespace WordNetProgram
             return row;
         }
 
-        private Panel CreateSynsetToApplyDepthDropdownRow(DropdownSection section, int rowWidth)
-        {
-            Font rowFont = new Font("Segoe UI", 9f);
-            int labelWidth = GetFilterLabelColumnWidth(rowFont);
-            int inputLeft = 20 + labelWidth + 6;
-            int inputWidth = Math.Max(100, rowWidth - inputLeft - 15);
-            int popupWidth = Math.Max(inputWidth, 340);
-
-            Panel row = new Panel
-            {
-                Size = new Size(rowWidth, 42),
-                BackColor = Color.White,
-                Margin = new Padding(0)
-            };
-
-            section.ChkSynsetToApplyDepth = new CheckBox
-            {
-                Text = "Apply Depth:",
-                AutoSize = true,
-                Location = new Point(20, 10),
-                Checked = true,
-                Font = rowFont
-            };
-
-            section.BtnSynsetToApplyDepth = new Button
-            {
-                Text = "Choose Synset to Apply Depth ▼",
-                Location = new Point(inputLeft, 6),
-                Size = new Size(inputWidth, 28),
-                TextAlign = ContentAlignment.MiddleLeft,
-                BackColor = Color.White,
-                FlatStyle = FlatStyle.Standard,
-                Font = rowFont
-            };
-
-            section.ChkSynsetToApplyDepth.CheckedChanged += (s, e) =>
-                section.BtnSynsetToApplyDepth.Enabled = section.ChkSynsetToApplyDepth.Checked;
-
-            Panel popupPanel = new Panel
-            {
-                Size = new Size(popupWidth, 220),
-                BackColor = Color.White
-            };
-
-            section.ChkSelectAll = new CheckBox
-            {
-                Text = "Select / Unselect All",
-                Location = new Point(8, 6),
-                AutoSize = true,
-                Font = new Font("Segoe UI", 9f, FontStyle.Bold)
-            };
-
-            section.ClbSynsetsToApplyDepth = new CheckedListBox
-            {
-                Location = new Point(4, 30),
-                Size = new Size(popupWidth - 8, 184),
-                CheckOnClick = true,
-                HorizontalScrollbar = true,
-                BorderStyle = BorderStyle.FixedSingle,
-                Font = new Font("Tahoma", 9f)
-            };
-
-            section.ChkSelectAll.CheckedChanged += (s, e) =>
-            {
-                if (section.IsUpdatingChecks) return;
-
-                section.IsUpdatingChecks = true;
-                for (int i = 0; i < section.ClbSynsetsToApplyDepth.Items.Count; i++)
-                {
-                    section.ClbSynsetsToApplyDepth.SetItemChecked(i, section.ChkSelectAll.Checked);
-                }
-                section.IsUpdatingChecks = false;
-
-                section.DepthOptionsDirty = true;
-                section.UpdateSynsetToApplyDepthButtonText();
-            };
-
-            section.ClbSynsetsToApplyDepth.ItemCheck += (s, e) =>
-            {
-                if (section.IsUpdatingChecks) return;
-
-                this.BeginInvoke((Action)(() =>
-                {
-                    section.IsUpdatingChecks = true;
-                    section.ChkSelectAll.Checked =
-                        (section.ClbSynsetsToApplyDepth.Items.Count > 0 &&
-                         section.ClbSynsetsToApplyDepth.CheckedItems.Count == section.ClbSynsetsToApplyDepth.Items.Count);
-                    section.IsUpdatingChecks = false;
-
-                    section.DepthOptionsDirty = true;
-                    section.UpdateSynsetToApplyDepthButtonText();
-                }));
-            };
-
-            popupPanel.Controls.Add(section.ChkSelectAll);
-            popupPanel.Controls.Add(section.ClbSynsetsToApplyDepth);
-
-            ToolStripControlHost host = new ToolStripControlHost(popupPanel)
-            {
-                Margin = Padding.Empty,
-                Padding = Padding.Empty,
-                AutoSize = false,
-                Size = popupPanel.Size
-            };
-
-            section.SynsetToApplyDepthPopup = new ToolStripDropDown
-            {
-                Margin = Padding.Empty,
-                Padding = Padding.Empty,
-                AutoClose = true
-            };
-            section.SynsetToApplyDepthPopup.Items.Add(host);
-
-            section.BtnSynsetToApplyDepth.Click += (s, e) =>
-            {
-                section.SynsetToApplyDepthPopup.Show(
-                    section.BtnSynsetToApplyDepth,
-                    new Point(0, section.BtnSynsetToApplyDepth.Height));
-            };
-
-            row.Controls.Add(section.ChkSynsetToApplyDepth);
-            row.Controls.Add(section.BtnSynsetToApplyDepth);
-            return row;
-        }
-
         private string BuildNewFilterConfigBase64(int hierarchyLevel)
         {
             string FormatAncestorJson(DropdownSection section)
@@ -1166,19 +1005,6 @@ namespace WordNetProgram
                     depthVal = parsedDepth;
                 }
 
-                var depthTargetOffsets = new List<string>();
-                if (section.ChkSynsetToApplyDepth.Checked)
-                {
-                    foreach (var item in section.ClbSynsetsToApplyDepth.CheckedItems)
-                    {
-                        if (item is SynsetDropdownItem synItem)
-                        {
-                            depthTargetOffsets.Add($"\"{synItem.Offset}\"");
-                        }
-                    }
-                }
-                string depthTargetsJson = $"[{string.Join(",", depthTargetOffsets)}]";
-
                 var depthSelectedEntries = new List<string>();
                 if (section.ChkDepth.Checked && depthVal > 0)
                 {
@@ -1193,7 +1019,7 @@ namespace WordNetProgram
                 }
                 string depthSelectedJson = $"{{{string.Join(",", depthSelectedEntries)}}}";
 
-                return $"\"{section.Level}\":{{\"show_other_children\":{(showOther ? "true" : "false")},\"selected_other_children\":{selectedOtherJson},\"depth\":{depthVal},\"depth_target_offsets\":{depthTargetsJson},\"depth_selected\":{depthSelectedJson}}}";
+                return $"\"{section.Level}\":{{\"show_other_children\":{(showOther ? "true" : "false")},\"selected_other_children\":{selectedOtherJson},\"depth\":{depthVal},\"depth_selected\":{depthSelectedJson}}}";
             }
 
             string FormatDescendantJson(DropdownSection section)
@@ -1324,19 +1150,7 @@ namespace WordNetProgram
             }
             if (depthVal <= 0) return;
 
-            // Use checked Apply Depth synsets if any are checked; otherwise use all checked Other Children
-            List<string> rootOffsets;
-            if (section.ChkSynsetToApplyDepth.Checked && section.ClbSynsetsToApplyDepth.CheckedItems.Count > 0)
-            {
-                rootOffsets = section.ClbSynsetsToApplyDepth.CheckedItems
-                    .OfType<SynsetDropdownItem>()
-                    .Select(x => x.Offset)
-                    .ToList();
-            }
-            else
-            {
-                rootOffsets = section.CheckedOtherChildrenOffsets.ToList();
-            }
+            List<string> rootOffsets = section.CheckedOtherChildrenOffsets.ToList();
 
             if (rootOffsets.Count == 0)
             {
@@ -1628,13 +1442,6 @@ namespace WordNetProgram
             public Dictionary<int, List<SynsetDropdownItem>> DepthNodeItems { get; set; } = new Dictionary<int, List<SynsetDropdownItem>>();
             public Dictionary<int, HashSet<string>> CheckedDepthNodeOffsets { get; set; } = new Dictionary<int, HashSet<string>>();
             public Dictionary<int, DepthPickerControl> DepthPickers { get; set; } = new Dictionary<int, DepthPickerControl>();
-
-            public CheckBox ChkSynsetToApplyDepth { get; set; }
-            public Button BtnSynsetToApplyDepth { get; set; }
-            public ToolStripDropDown SynsetToApplyDepthPopup { get; set; }
-            public CheckBox ChkSelectAll { get; set; }
-            public CheckedListBox ClbSynsetsToApplyDepth { get; set; }
-            public bool IsUpdatingChecks { get; set; }
 
             // Descendant controls
             public CheckBox ChkDescendantNodes { get; set; }
@@ -2128,55 +1935,6 @@ namespace WordNetProgram
 
                 ApplyOtherChildrenSearchFilter(string.Empty);
                 UpdateOtherChildrenButtonText();
-                SyncApplyDepthFromOtherChildren();
-            }
-
-            public void SyncApplyDepthFromOtherChildren()
-            {
-                var selectedItems = AllOtherChildrenItems
-                    .Where(item => CheckedOtherChildrenOffsets.Contains(item.Offset))
-                    .ToList();
-
-                PopulateSynsetOptions(selectedItems);
-            }
-
-            public void UpdateSynsetToApplyDepthButtonText()
-            {
-                if (ClbSynsetsToApplyDepth == null || BtnSynsetToApplyDepth == null) return;
-
-                int count = ClbSynsetsToApplyDepth.CheckedItems.Count;
-                if (count == 0)
-                    BtnSynsetToApplyDepth.Text = "Choose Synset to Apply Depth ▼";
-                else if (count == ClbSynsetsToApplyDepth.Items.Count)
-                    BtnSynsetToApplyDepth.Text = "All Selected ▼";
-                else
-                    BtnSynsetToApplyDepth.Text = $"{count} Selected ▼";
-            }
-
-            public void PopulateSynsetOptions(List<SynsetDropdownItem> items)
-            {
-                if (ClbSynsetsToApplyDepth == null || ChkSelectAll == null) return;
-
-                var previouslyChecked = new HashSet<string>(
-                    ClbSynsetsToApplyDepth.CheckedItems
-                        .OfType<SynsetDropdownItem>()
-                        .Select(x => x.Offset)
-                );
-
-                IsUpdatingChecks = true;
-                ClbSynsetsToApplyDepth.Items.Clear();
-
-                foreach (var item in items)
-                {
-                    bool isChecked = previouslyChecked.Contains(item.Offset);
-                    ClbSynsetsToApplyDepth.Items.Add(item, isChecked);
-                }
-
-                ChkSelectAll.Checked = (ClbSynsetsToApplyDepth.Items.Count > 0 &&
-                                        ClbSynsetsToApplyDepth.CheckedItems.Count == ClbSynsetsToApplyDepth.Items.Count);
-                IsUpdatingChecks = false;
-
-                UpdateSynsetToApplyDepthButtonText();
             }
 
             public void Dispose()
@@ -2184,7 +1942,6 @@ namespace WordNetProgram
                 DisposeDepthPickers();
                 DescendantPicker?.Dispose();
                 OtherChildrenPopup?.Dispose();
-                SynsetToApplyDepthPopup?.Dispose();
                 HeaderPanel?.Dispose();
                 ContentPanel?.Dispose();
             }

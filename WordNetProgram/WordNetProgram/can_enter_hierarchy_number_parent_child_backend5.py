@@ -368,7 +368,6 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
     show_other = cfg.get("show_other_children", True)
     selected_other = set(cfg.get("selected_other_children", []))
     lateral_depth = cfg.get("depth", 0) or 0
-    depth_target_offsets = set(cfg.get("depth_target_offsets", []))
     depth_selected = cfg.get("depth_selected", {})
 
     for parent_hyp in hypernyms:
@@ -397,13 +396,8 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
                 sib_offset = sib_hyp["Target"]
                 edges.add((parent_offset, sib_offset))
 
-                if depth_target_offsets and sib_offset not in depth_target_offsets:
-                    effective_depth = 0
-                else:
-                    effective_depth = lateral_depth
-
                 traverse_lateral_downward(
-                    data_dict, sib_offset, edges, 1, effective_depth,
+                    data_dict, sib_offset, edges, 1, lateral_depth,
                     depth_selected, current_depth, visited_lat, dropdown_options
                 )
 
