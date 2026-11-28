@@ -41,14 +41,14 @@ namespace WordNetProgram
             public override string ToString() => DisplayText;
         }
 
-        // Group header row inside the Depth picker (e.g., "Parent: tunicate")
+        // Group header row inside the Depth / Descendant picker (e.g., "Parent: tunicate")
         private class DepthParentHeaderItem
         {
             public string ParentLabel { get; set; }
             public override string ToString() => $"Parent: {ParentLabel}";
         }
 
-        // Indented child row inside the Depth picker
+        // Indented child row inside the Depth / Descendant picker
         private class IndentedSynsetDropdownItem
         {
             public SynsetDropdownItem Item { get; set; }
@@ -99,6 +99,9 @@ namespace WordNetProgram
             // Descendant state
             public bool NumberOfDescendantChecked { get; set; } = true;
             public string NumberOfDescendantText { get; set; } = "0";
+            public bool DescendantNodesChecked { get; set; } = true;
+            public List<SynsetDropdownItem> DescendantNodeItems { get; set; } = new List<SynsetDropdownItem>();
+            public HashSet<string> CheckedDescendantNodeOffsets { get; set; } = new HashSet<string>();
         }
 
         private readonly Dictionary<(bool IsAncestor, int Level), SavedDropdownState> savedFilterStates = new Dictionary<(bool IsAncestor, int Level), SavedDropdownState>();
@@ -339,6 +342,11 @@ namespace WordNetProgram
                 {
                     state.NumberOfDescendantChecked = section.ChkNumberOfDescendant.Checked;
                     state.NumberOfDescendantText = section.TbNumberOfDescendant.Text;
+                    state.DescendantNodesChecked = section.ChkDescendantNodes.Checked;
+                    state.DescendantNodeItems = section.DescendantNodeItems
+                        .Select(x => new SynsetDropdownItem { Offset = x.Offset, DisplayText = x.DisplayText })
+                        .ToList();
+                    state.CheckedDescendantNodeOffsets = new HashSet<string>(section.CheckedDescendantNodeOffsets);
                 }
 
                 savedFilterStates[key] = state;
@@ -389,6 +397,8 @@ namespace WordNetProgram
             {
                 section.ChkNumberOfDescendant.Checked = state.NumberOfDescendantChecked;
                 section.TbNumberOfDescendant.Text = state.NumberOfDescendantText;
+                section.ChkDescendantNodes.Checked = state.DescendantNodesChecked;
+                section.PopulateDescendantNodeOptions(state.DescendantNodeItems, state.CheckedDescendantNodeOffsets);
             }
         }
 
@@ -453,6 +463,14 @@ namespace WordNetProgram
             pnlNewFilterSections.ResumeLayout(true);
         }
 
+        private void MarkDescendantOptionsDirty()
+        {
+            foreach (var sec in newFilterDropdownSections.Where(s => !s.IsAncestor))
+            {
+                sec.DescendantOptionsDirty = true;
+            }
+        }
+
         private DropdownSection CreateDropdownSection(string title, bool isAncestor, int level, int rowWidth)
         {
             var section = new DropdownSection
@@ -461,7 +479,8 @@ namespace WordNetProgram
                 IsAncestor = isAncestor,
                 Level = level,
                 RowWidth = rowWidth,
-                OnNeedDepthOptions = FetchDepthOptionsAsync
+                OnNeedDepthOptions = FetchDepthOptionsAsync,
+                OnNeedDescendantOptions = FetchDescendantOptionsAsync
             };
 
             // Content container
@@ -522,7 +541,7 @@ namespace WordNetProgram
             }
             else
             {
-                // Descendant Row: Number of Descendant TextBox (pre-filled with "0")
+                // Descendant Row 1: Number of Descendant TextBox (pre-filled with "0")
                 section.ContentPanel.Controls.Add(
                     CreateTextBoxRow(
                         "Number of Descendant:",
@@ -533,9 +552,223 @@ namespace WordNetProgram
                 tbNumberOfDescendant.Text = "0";
                 section.ChkNumberOfDescendant = chkNumberOfDescendant;
                 section.TbNumberOfDescendant = tbNumberOfDescendant;
+
+                tbNumberOfDescendant.TextChanged += (s, e) => MarkDescendantOptionsDirty();
+                chkNumberOfDescendant.CheckedChanged += (s, e) => MarkDescendantOptionsDirty();
+
+                // Descendant Row 2: Searchable, parent-grouped node picker
+                section.ContentPanel.Controls.Add(CreateDescendantNodesDropdownRow(section, rowWidth));
             }
 
             return section;
+        }
+
+        private Panel CreateDescendantNodesDropdownRow(DropdownSection section, int rowWidth)
+        {
+            Font rowFont = new Font("Segoe UI", 9f);
+            int labelWidth = GetFilterLabelColumnWidth(rowFont, "Choose Synsets:");
+            int inputLeft = 20 + labelWidth + 6;
+            int inputWidth = Math.Max(100, rowWidth - inputLeft - 15);
+            int popupWidth = Math.Max(inputWidth, 380);
+
+            Panel row = new Panel
+            {
+                Size = new Size(rowWidth, 42),
+                BackColor = Color.White,
+                Margin = new Padding(0)
+            };
+
+            section.ChkDescendantNodes = new CheckBox
+            {
+                Text = "Choose Synsets:",
+                AutoSize = true,
+                Location = new Point(20, 10),
+                Checked = true,
+                Font = rowFont
+            };
+
+            var picker = new DepthPickerControl();
+            picker.BtnPick = new Button
+            {
+                Text = "Choose Nodes (Auto) ▼",
+                Location = new Point(inputLeft, 6),
+                Size = new Size(inputWidth, 28),
+                TextAlign = ContentAlignment.MiddleLeft,
+                BackColor = Color.White,
+                FlatStyle = FlatStyle.Standard,
+                Font = rowFont
+            };
+
+            section.ChkDescendantNodes.CheckedChanged += (s, e) =>
+            {
+                picker.BtnPick.Enabled = section.ChkDescendantNodes.Checked;
+                MarkDescendantOptionsDirty();
+            };
+
+            Panel popupPanel = new Panel
+            {
+                Size = new Size(popupWidth, 252),
+                BackColor = Color.White
+            };
+
+            picker.TxtSearch = new TextBox
+            {
+                Location = new Point(6, 6),
+                Width = popupWidth - 12,
+                Font = new Font("Tahoma", 9f)
+            };
+
+            picker.ChkSelectAll = new CheckBox
+            {
+                Text = "Select / Unselect Visible (None = Use Number)",
+                Location = new Point(8, 34),
+                AutoSize = true,
+                Font = new Font("Segoe UI", 8.5f, FontStyle.Bold)
+            };
+
+            picker.ClbNodes = new CheckedListBox
+            {
+                Location = new Point(4, 58),
+                Size = new Size(popupWidth - 8, 188),
+                CheckOnClick = true,
+                HorizontalScrollbar = true,
+                BorderStyle = BorderStyle.FixedSingle,
+                Font = new Font("Tahoma", 8.5f)
+            };
+
+            picker.TxtSearch.TextChanged += (s, e) =>
+            {
+                section.ApplyDescendantSearchFilter(picker.TxtSearch.Text);
+            };
+
+            picker.ChkSelectAll.CheckedChanged += (s, e) =>
+            {
+                if (picker.IsUpdatingChecks) return;
+
+                picker.IsUpdatingChecks = true;
+                bool checkAll = picker.ChkSelectAll.Checked;
+                for (int i = 0; i < picker.ClbNodes.Items.Count; i++)
+                {
+                    picker.ClbNodes.SetItemChecked(i, checkAll);
+                    if (picker.ClbNodes.Items[i] is IndentedSynsetDropdownItem indented)
+                    {
+                        if (checkAll) section.CheckedDescendantNodeOffsets.Add(indented.Item.Offset);
+                        else section.CheckedDescendantNodeOffsets.Remove(indented.Item.Offset);
+                    }
+                }
+                picker.IsUpdatingChecks = false;
+
+                MarkDescendantOptionsDirty();
+                section.UpdateDescendantPickerButtonText();
+            };
+
+            picker.ClbNodes.ItemCheck += (s, e) =>
+            {
+                if (picker.IsUpdatingChecks) return;
+
+                bool isChecked = (e.NewValue == CheckState.Checked);
+                object clickedObj = picker.ClbNodes.Items[e.Index];
+
+                if (clickedObj is DepthParentHeaderItem header)
+                {
+                    picker.ClbNodes.BeginInvoke((Action)(() =>
+                    {
+                        picker.IsUpdatingChecks = true;
+                        for (int i = 0; i < picker.ClbNodes.Items.Count; i++)
+                        {
+                            if (picker.ClbNodes.Items[i] is IndentedSynsetDropdownItem child &&
+                                child.ParentLabel == header.ParentLabel)
+                            {
+                                picker.ClbNodes.SetItemChecked(i, isChecked);
+                                if (isChecked) section.CheckedDescendantNodeOffsets.Add(child.Item.Offset);
+                                else section.CheckedDescendantNodeOffsets.Remove(child.Item.Offset);
+                            }
+                        }
+
+                        section.SyncPickerSelectAllState(picker);
+                        picker.IsUpdatingChecks = false;
+
+                        MarkDescendantOptionsDirty();
+                        section.UpdateDescendantPickerButtonText();
+                    }));
+                }
+                else if (clickedObj is IndentedSynsetDropdownItem indented)
+                {
+                    if (isChecked) section.CheckedDescendantNodeOffsets.Add(indented.Item.Offset);
+                    else section.CheckedDescendantNodeOffsets.Remove(indented.Item.Offset);
+
+                    picker.ClbNodes.BeginInvoke((Action)(() =>
+                    {
+                        picker.IsUpdatingChecks = true;
+
+                        int headerIndex = -1;
+                        bool allGroupChecked = true;
+                        for (int i = 0; i < picker.ClbNodes.Items.Count; i++)
+                        {
+                            if (picker.ClbNodes.Items[i] is DepthParentHeaderItem h &&
+                                h.ParentLabel == indented.ParentLabel)
+                            {
+                                headerIndex = i;
+                            }
+                            else if (picker.ClbNodes.Items[i] is IndentedSynsetDropdownItem child &&
+                                     child.ParentLabel == indented.ParentLabel)
+                            {
+                                if (!picker.ClbNodes.GetItemChecked(i))
+                                    allGroupChecked = false;
+                            }
+                        }
+
+                        if (headerIndex >= 0)
+                            picker.ClbNodes.SetItemChecked(headerIndex, allGroupChecked);
+
+                        section.SyncPickerSelectAllState(picker);
+                        picker.IsUpdatingChecks = false;
+
+                        MarkDescendantOptionsDirty();
+                        section.UpdateDescendantPickerButtonText();
+                    }));
+                }
+            };
+
+            popupPanel.Controls.Add(picker.TxtSearch);
+            popupPanel.Controls.Add(picker.ChkSelectAll);
+            popupPanel.Controls.Add(picker.ClbNodes);
+
+            ToolStripControlHost host = new ToolStripControlHost(popupPanel)
+            {
+                Margin = Padding.Empty,
+                Padding = Padding.Empty,
+                AutoSize = false,
+                Size = popupPanel.Size
+            };
+
+            picker.Popup = new ToolStripDropDown
+            {
+                Margin = Padding.Empty,
+                Padding = Padding.Empty,
+                AutoClose = true
+            };
+            picker.Popup.Items.Add(host);
+
+            picker.BtnPick.Click += async (s, e) =>
+            {
+                if (section.DescendantOptionsDirty && section.OnNeedDescendantOptions != null)
+                {
+                    await section.OnNeedDescendantOptions();
+                }
+
+                picker.Popup.Show(
+                    picker.BtnPick,
+                    new Point(0, picker.BtnPick.Height));
+                picker.TxtSearch.Focus();
+            };
+
+            section.DescendantPicker = picker;
+            section.UpdateDescendantPickerButtonText();
+
+            row.Controls.Add(section.ChkDescendantNodes);
+            row.Controls.Add(picker.BtnPick);
+            return row;
         }
 
         private Panel CreateHeaderRow(string title, int indentLeft, int rowWidth, out Label chevronLabel, Action onClick)
@@ -993,7 +1226,17 @@ namespace WordNetProgram
                     numDescVal = parsedNum.ToString();
                 }
 
-                return $"\"{section.Level}\":{{\"show_descendants\":{(showDescendants ? "true" : "false")},\"number_of_descendant\":{numDescVal}}}";
+                var selectedDescOffsets = new List<string>();
+                if (section.ChkDescendantNodes != null && section.ChkDescendantNodes.Checked)
+                {
+                    foreach (string off in section.CheckedDescendantNodeOffsets)
+                    {
+                        selectedDescOffsets.Add($"\"{off}\"");
+                    }
+                }
+                string selectedDescJson = $"[{string.Join(",", selectedDescOffsets)}]";
+
+                return $"\"{section.Level}\":{{\"show_descendants\":{(showDescendants ? "true" : "false")},\"number_of_descendant\":{numDescVal},\"selected_descendants\":{selectedDescJson}}}";
             }
 
             var ancEntries = newFilterDropdownSections
@@ -1063,12 +1306,17 @@ namespace WordNetProgram
 
             foreach (var section in newFilterDropdownSections)
             {
-                if (!section.IsAncestor) continue;
-
                 var key = (section.IsAncestor, section.Level);
                 var items = optionsBySection.TryGetValue(key, out var list)
                     ? list
                     : new List<SynsetDropdownItem>();
+
+                if (!section.IsAncestor)
+                {
+                    section.PopulateDescendantNodeOptions(items);
+                    section.DescendantOptionsDirty = false;
+                    continue;
+                }
 
                 section.PopulateOtherChildrenOptions(items);
 
@@ -1219,6 +1467,114 @@ namespace WordNetProgram
             }
         }
 
+        private async Task FetchDescendantOptionsAsync()
+        {
+            string query = tbSynsetWord.Text.Trim();
+            if (string.IsNullOrEmpty(query)) return;
+
+            int hierarchyLevel = currentNewHierarchyCount;
+            if (hierarchyLevel <= 0) return;
+
+            var descEntries = newFilterDropdownSections
+                .Where(s => !s.IsAncestor)
+                .Select(section =>
+                {
+                    bool showDescendants = section.ChkNumberOfDescendant.Checked;
+                    string numDescVal = "null";
+                    if (showDescendants && int.TryParse(section.TbNumberOfDescendant.Text.Trim(), out int parsedNum) && parsedNum >= 0)
+                    {
+                        numDescVal = parsedNum.ToString();
+                    }
+
+                    var selectedDescOffsets = new List<string>();
+                    if (section.ChkDescendantNodes != null && section.ChkDescendantNodes.Checked)
+                    {
+                        foreach (string off in section.CheckedDescendantNodeOffsets)
+                            selectedDescOffsets.Add($"\"{off}\"");
+                    }
+
+                    return $"\"{section.Level}\":{{\"show_descendants\":{(showDescendants ? "true" : "false")},\"number_of_descendant\":{numDescVal},\"selected_descendants\":[{string.Join(",", selectedDescOffsets)}]}}";
+                });
+
+            string escapedQuery = query.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            string json = $"{{\"query\":\"{escapedQuery}\",\"hierarchy\":{hierarchyLevel},\"descendants\":{{{string.Join(",", descEntries)}}}}}";
+            string configBase64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(json));
+            string args = $"\"{jsonFile}\" --descendant-options {configBase64}";
+
+            try
+            {
+                this.Cursor = Cursors.WaitCursor;
+
+                ProcessStartInfo startInfo = new ProcessStartInfo
+                {
+                    FileName = "python",
+                    Arguments = $"\"{pythonScript}\" {args}",
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.UTF8
+                };
+
+                string output = "";
+                await Task.Run(() =>
+                {
+                    using (Process process = Process.Start(startInfo))
+                    {
+                        output = process.StandardOutput.ReadToEnd();
+                        process.WaitForExit();
+                    }
+                });
+
+                var descOptionsByLevel = new Dictionary<int, List<SynsetDropdownItem>>();
+                if (output.Contains("DROPDOWN_OPTIONS_START"))
+                {
+                    string[] lines = output.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    bool capture = false;
+
+                    foreach (string line in lines)
+                    {
+                        if (line == "DROPDOWN_OPTIONS_END") capture = false;
+                        if (capture)
+                        {
+                            string[] fields = line.Split('|');
+                            if (fields.Length >= 4 &&
+                                fields[0].Trim().Equals("DESC", StringComparison.OrdinalIgnoreCase) &&
+                                int.TryParse(fields[1], out int level))
+                            {
+                                if (!descOptionsByLevel.ContainsKey(level))
+                                    descOptionsByLevel[level] = new List<SynsetDropdownItem>();
+
+                                descOptionsByLevel[level].Add(new SynsetDropdownItem
+                                {
+                                    Offset = fields[2].Trim(),
+                                    DisplayText = fields[3].Trim()
+                                });
+                            }
+                        }
+                        if (line == "DROPDOWN_OPTIONS_START") capture = true;
+                    }
+                }
+
+                foreach (var section in newFilterDropdownSections.Where(s => !s.IsAncestor))
+                {
+                    var items = descOptionsByLevel.TryGetValue(section.Level, out var list)
+                        ? list
+                        : new List<SynsetDropdownItem>();
+                    section.PopulateDescendantNodeOptions(items);
+                    section.DescendantOptionsDirty = false;
+                }
+            }
+            catch
+            {
+                // Ignore transient lookup errors
+            }
+            finally
+            {
+                this.Cursor = Cursors.Default;
+            }
+        }
+
         private async void BtnApplyNewFilter_Click(object sender, EventArgs e)
         {
             string query = tbSynsetWord.Text.Trim();
@@ -1278,6 +1634,8 @@ namespace WordNetProgram
             public int RowWidth { get; set; }
             public bool DepthOptionsDirty { get; set; } = true;
             public Func<DropdownSection, Task> OnNeedDepthOptions { get; set; }
+            public bool DescendantOptionsDirty { get; set; } = true;
+            public Func<Task> OnNeedDescendantOptions { get; set; }
 
             public Panel HeaderPanel { get; set; }
             public Panel ContentPanel { get; set; }
@@ -1312,6 +1670,10 @@ namespace WordNetProgram
             // Descendant controls
             public CheckBox ChkNumberOfDescendant { get; set; }
             public TextBox TbNumberOfDescendant { get; set; }
+            public CheckBox ChkDescendantNodes { get; set; }
+            public DepthPickerControl DescendantPicker { get; set; }
+            public List<SynsetDropdownItem> DescendantNodeItems { get; set; } = new List<SynsetDropdownItem>();
+            public HashSet<string> CheckedDescendantNodeOffsets { get; set; } = new HashSet<string>();
 
             private void DisposeDepthPickers()
             {
@@ -1589,6 +1951,11 @@ namespace WordNetProgram
                     picker.BtnPick.Text = $"{count}/{total} Picked ▼";
             }
 
+            public void SyncPickerSelectAllState(DepthPickerControl picker)
+            {
+                SyncDepthSelectAllState(picker);
+            }
+
             private void SyncDepthSelectAllState(DepthPickerControl picker)
             {
                 int totalChildren = 0;
@@ -1664,6 +2031,76 @@ namespace WordNetProgram
 
                     ApplyDepthSearchFilter(depthIndex, string.Empty);
                     UpdateDepthPickerButtonText(depthIndex);
+                }
+            }
+
+            public void UpdateDescendantPickerButtonText()
+            {
+                if (DescendantPicker?.BtnPick == null) return;
+
+                int total = DescendantNodeItems.Count;
+                int count = CheckedDescendantNodeOffsets.Count;
+
+                if (total == 0)
+                    DescendantPicker.BtnPick.Text = "Choose Nodes (Auto) ▼";
+                else if (count == 0)
+                    DescendantPicker.BtnPick.Text = $"Auto ({total} avail) ▼";
+                else if (count == total)
+                    DescendantPicker.BtnPick.Text = $"All ({total}) Picked ▼";
+                else
+                    DescendantPicker.BtnPick.Text = $"{count}/{total} Picked ▼";
+            }
+
+            public void ApplyDescendantSearchFilter(string searchText)
+            {
+                if (DescendantPicker?.ClbNodes == null) return;
+
+                string filter = (searchText ?? string.Empty).Trim();
+                var matchingItems = DescendantNodeItems
+                    .Where(item => string.IsNullOrEmpty(filter) ||
+                                   item.DisplayText.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                    .ToList();
+
+                var grouped = matchingItems
+                    .GroupBy(item => ExtractParentLabel(item.DisplayText));
+
+                DescendantPicker.IsUpdatingChecks = true;
+                DescendantPicker.ClbNodes.Items.Clear();
+
+                foreach (var group in grouped)
+                {
+                    bool allGroupChecked = group.All(item => CheckedDescendantNodeOffsets.Contains(item.Offset));
+                    DescendantPicker.ClbNodes.Items.Add(new DepthParentHeaderItem { ParentLabel = group.Key }, allGroupChecked);
+
+                    foreach (var item in group)
+                    {
+                        bool isChecked = CheckedDescendantNodeOffsets.Contains(item.Offset);
+                        DescendantPicker.ClbNodes.Items.Add(
+                            new IndentedSynsetDropdownItem { Item = item, ParentLabel = group.Key },
+                            isChecked
+                        );
+                    }
+                }
+
+                SyncDepthSelectAllState(DescendantPicker);
+                DescendantPicker.IsUpdatingChecks = false;
+            }
+
+            public void PopulateDescendantNodeOptions(List<SynsetDropdownItem> items, HashSet<string> explicitChecked = null)
+            {
+                var validOffsets = new HashSet<string>(items.Select(x => x.Offset));
+                var sourceChecked = explicitChecked ?? CheckedDescendantNodeOffsets;
+
+                DescendantNodeItems = items.ToList();
+                CheckedDescendantNodeOffsets = new HashSet<string>(sourceChecked.Where(off => validOffsets.Contains(off)));
+
+                if (DescendantPicker != null)
+                {
+                    if (DescendantPicker.TxtSearch != null)
+                        DescendantPicker.TxtSearch.Text = string.Empty;
+
+                    ApplyDescendantSearchFilter(string.Empty);
+                    UpdateDescendantPickerButtonText();
                 }
             }
 
@@ -1778,6 +2215,7 @@ namespace WordNetProgram
             public void Dispose()
             {
                 DisposeDepthPickers();
+                DescendantPicker?.Dispose();
                 OtherChildrenPopup?.Dispose();
                 SynsetToApplyDepthPopup?.Dispose();
                 HeaderPanel?.Dispose();

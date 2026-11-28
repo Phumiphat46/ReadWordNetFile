@@ -129,7 +129,7 @@ def format_dropdown_option(data_dict, offset):
         eng_str = "unknown"
     return f"Synset: {offset}, TH: {thai_str}, ENG: {eng_str}"
 
-# Formats a depth-level synset option with its parent name(s) so mixed branches stay clear
+# Formats a depth/descendant synset option with its parent name(s) so mixed branches stay clear
 def format_depth_dropdown_option(data_dict, offset, parent_offsets):
     base_text = format_dropdown_option(data_dict, offset)
     parent_names = []
@@ -323,22 +323,35 @@ def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_d
             edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{len(hyponyms)}"))
         return
 
+    # Always record all available hyponyms at this descendant level so the C# picker is populated
+    desc_bucket = dropdown_options["descendants"].setdefault(current_depth, {})
+    for hyp in hyponyms:
+        desc_bucket.setdefault(hyp["Target"], set()).add(current_offset)
+
     cfg = desc_cfg.get(str(current_depth), {})
     show_desc = cfg.get("show_descendants", cfg.get("show_other_children", True))
-    if not show_desc:
-        if len(hyponyms) > 0:
-            edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{len(hyponyms)}"))
-        return
+    selected_desc = set(cfg.get("selected_descendants", []))
 
-    limit = cfg.get("number_of_descendant", cfg.get("other_children", None))
-
-    if limit is not None and len(hyponyms) > limit:
-        shown_hyps = hyponyms[:limit]
-        remaining = len(hyponyms) - limit
+    if selected_desc:
+        shown_hyps = [h for h in hyponyms if h["Target"] in selected_desc]
+        remaining = len(hyponyms) - len(shown_hyps)
         if remaining > 0:
             edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
     else:
-        shown_hyps = hyponyms
+        if not show_desc:
+            if len(hyponyms) > 0:
+                edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{len(hyponyms)}"))
+            return
+
+        limit = cfg.get("number_of_descendant", cfg.get("other_children", None))
+
+        if limit is not None and len(hyponyms) > limit:
+            shown_hyps = hyponyms[:limit]
+            remaining = len(hyponyms) - limit
+            if remaining > 0:
+                edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
+        else:
+            shown_hyps = hyponyms
 
     for hyp in shown_hyps:
         child_offset = hyp["Target"]
@@ -402,9 +415,9 @@ def traverse_upward_new(data_dict, current_offset, edges, current_depth, max_dep
                     effective_depth = lateral_depth
 
                 traverse_lateral_downward(
-                 data_dict, sib_offset, edges, 1, effective_depth,
-                 depth_selected, current_depth, visited_lat, dropdown_options
-             )
+                    data_dict, sib_offset, edges, 1, effective_depth,
+                    depth_selected, current_depth, visited_lat, dropdown_options
+                )
 
             traverse_upward_new(data_dict, parent_offset, edges, current_depth + 1, max_depth, anc_cfg, visited_up, visited_lat, dropdown_options)
 
@@ -469,16 +482,50 @@ def main():
         dropdown_options = {"ancestors": {}, "descendants": {}, "anc_depth": {}}
 
         for root_off in root_offsets:
-         traverse_lateral_downward(
-             data_dict, root_off, dummy_edges, 1, max_depth,
-             depth_selected, anc_level, visited_lat, dropdown_options
-         )
+            traverse_lateral_downward(
+                data_dict, root_off, dummy_edges, 1, max_depth,
+                depth_selected, anc_level, visited_lat, dropdown_options
+            )
 
         print("DROPDOWN_OPTIONS_START")
         for (a_lvl, depth_idx), child_map in sorted(dropdown_options["anc_depth"].items()):
             for off in sorted(list(child_map.keys()), reverse=True):
                 display_text = format_depth_dropdown_option(data_dict, off, child_map[off]).replace("|", "/")
                 print(f"ANC_DEPTH|{a_lvl}|{depth_idx}|{off}|{display_text}")
+        print("DROPDOWN_OPTIONS_END")
+        sys.exit(0)
+
+    # === LIGHTWEIGHT ON-DEMAND DESCENDANT PICKER LOOKUP (NO GRAPHVIZ RENDER) ===
+    if query == "--descendant-options" and len(sys.argv) >= 4:
+        try:
+            req_json = base64.b64decode(sys.argv[3]).decode("utf-8")
+            req = json.loads(req_json)
+        except Exception as e:
+            print(f"ERROR: Invalid descendant-options config. {e}")
+            sys.exit(1)
+
+        target_query = req.get("query", "")
+        hierarchy_level = req.get("hierarchy", 0) or 0
+        desc_cfg = req.get("descendants", {})
+
+        matches = find_target_synsets(data_dict, target_query)
+        if not matches:
+            print("DROPDOWN_OPTIONS_START")
+            print("DROPDOWN_OPTIONS_END")
+            sys.exit(0)
+
+        exact = [s for s in matches if s["Offset"] == target_query]
+        target_offset = exact[0]["Offset"] if len(exact) == 1 else matches[0]["Offset"]
+
+        dummy_edges = set()
+        dropdown_options = {"ancestors": {}, "descendants": {}, "anc_depth": {}}
+        traverse_downward_new(data_dict, target_offset, dummy_edges, 1, hierarchy_level, desc_cfg, set(), dropdown_options)
+
+        print("DROPDOWN_OPTIONS_START")
+        for level, child_map in sorted(dropdown_options["descendants"].items()):
+            for off in sorted(list(child_map.keys()), reverse=True):
+                display_text = format_depth_dropdown_option(data_dict, off, child_map[off]).replace("|", "/")
+                print(f"DESC|{level}|{off}|{display_text}")
         print("DROPDOWN_OPTIONS_END")
         sys.exit(0)
 
@@ -577,12 +624,15 @@ def main():
         print("SYNSETS_END")
 
         print("DROPDOWN_OPTIONS_START")
-        for group_key in ("ancestors", "descendants"):
-            group_prefix = "ANC" if group_key == "ancestors" else "DESC"
-            for level, offsets in sorted(dropdown_options[group_key].items()):
-                for off in sorted(list(offsets), reverse=True):
-                    display_text = format_dropdown_option(data_dict, off).replace("|", "/")
-                    print(f"{group_prefix}|{level}|{off}|{display_text}")
+        for level, offsets in sorted(dropdown_options["ancestors"].items()):
+            for off in sorted(list(offsets), reverse=True):
+                display_text = format_dropdown_option(data_dict, off).replace("|", "/")
+                print(f"ANC|{level}|{off}|{display_text}")
+
+        for level, child_map in sorted(dropdown_options["descendants"].items()):
+            for off in sorted(list(child_map.keys()), reverse=True):
+                display_text = format_depth_dropdown_option(data_dict, off, child_map[off]).replace("|", "/")
+                print(f"DESC|{level}|{off}|{display_text}")
 
         for (anc_level, depth_idx), child_map in sorted(dropdown_options["anc_depth"].items()):
             for off in sorted(list(child_map.keys()), reverse=True):
