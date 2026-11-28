@@ -329,29 +329,17 @@ def traverse_downward_new(data_dict, current_offset, edges, current_depth, max_d
         desc_bucket.setdefault(hyp["Target"], set()).add(current_offset)
 
     cfg = desc_cfg.get(str(current_depth), {})
-    show_desc = cfg.get("show_descendants", cfg.get("show_other_children", True))
+    show_desc = cfg.get("show_descendants", True)
     selected_desc = set(cfg.get("selected_descendants", []))
 
-    if selected_desc:
+    if show_desc and selected_desc:
         shown_hyps = [h for h in hyponyms if h["Target"] in selected_desc]
-        remaining = len(hyponyms) - len(shown_hyps)
-        if remaining > 0:
-            edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
     else:
-        if not show_desc:
-            if len(hyponyms) > 0:
-                edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{len(hyponyms)}"))
-            return
+        shown_hyps = []
 
-        limit = cfg.get("number_of_descendant", cfg.get("other_children", None))
-
-        if limit is not None and len(hyponyms) > limit:
-            shown_hyps = hyponyms[:limit]
-            remaining = len(hyponyms) - limit
-            if remaining > 0:
-                edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
-        else:
-            shown_hyps = hyponyms
+    remaining = len(hyponyms) - len(shown_hyps)
+    if remaining > 0:
+        edges.add((current_offset, f"OTHERS_DES_OF_{current_offset}_{remaining}"))
 
     for hyp in shown_hyps:
         child_offset = hyp["Target"]

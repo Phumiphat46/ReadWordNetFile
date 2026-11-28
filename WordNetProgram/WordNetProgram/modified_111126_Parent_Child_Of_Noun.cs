@@ -97,8 +97,6 @@ namespace WordNetProgram
             public HashSet<string> CheckedOffsets { get; set; } = new HashSet<string>();
 
             // Descendant state
-            public bool NumberOfDescendantChecked { get; set; } = true;
-            public string NumberOfDescendantText { get; set; } = "0";
             public bool DescendantNodesChecked { get; set; } = true;
             public List<SynsetDropdownItem> DescendantNodeItems { get; set; } = new List<SynsetDropdownItem>();
             public HashSet<string> CheckedDescendantNodeOffsets { get; set; } = new HashSet<string>();
@@ -340,8 +338,6 @@ namespace WordNetProgram
                 }
                 else
                 {
-                    state.NumberOfDescendantChecked = section.ChkNumberOfDescendant.Checked;
-                    state.NumberOfDescendantText = section.TbNumberOfDescendant.Text;
                     state.DescendantNodesChecked = section.ChkDescendantNodes.Checked;
                     state.DescendantNodeItems = section.DescendantNodeItems
                         .Select(x => new SynsetDropdownItem { Offset = x.Offset, DisplayText = x.DisplayText })
@@ -395,8 +391,6 @@ namespace WordNetProgram
             }
             else
             {
-                section.ChkNumberOfDescendant.Checked = state.NumberOfDescendantChecked;
-                section.TbNumberOfDescendant.Text = state.NumberOfDescendantText;
                 section.ChkDescendantNodes.Checked = state.DescendantNodesChecked;
                 section.PopulateDescendantNodeOptions(state.DescendantNodeItems, state.CheckedDescendantNodeOffsets);
             }
@@ -541,22 +535,7 @@ namespace WordNetProgram
             }
             else
             {
-                // Descendant Row 1: Number of Descendant TextBox (pre-filled with "0")
-                section.ContentPanel.Controls.Add(
-                    CreateTextBoxRow(
-                        "Number of Descendant:",
-                        rowWidth,
-                        out CheckBox chkNumberOfDescendant,
-                        out TextBox tbNumberOfDescendant,
-                        widthSampleText: "Number of Descendant:"));
-                tbNumberOfDescendant.Text = "0";
-                section.ChkNumberOfDescendant = chkNumberOfDescendant;
-                section.TbNumberOfDescendant = tbNumberOfDescendant;
-
-                tbNumberOfDescendant.TextChanged += (s, e) => MarkDescendantOptionsDirty();
-                chkNumberOfDescendant.CheckedChanged += (s, e) => MarkDescendantOptionsDirty();
-
-                // Descendant Row 2: Searchable, parent-grouped node picker
+                // Descendant Row: Searchable, parent-grouped node picker
                 section.ContentPanel.Controls.Add(CreateDescendantNodesDropdownRow(section, rowWidth));
             }
 
@@ -590,7 +569,7 @@ namespace WordNetProgram
             var picker = new DepthPickerControl();
             picker.BtnPick = new Button
             {
-                Text = "Choose Nodes (Auto) ▼",
+                Text = "Choose Synsets ▼",
                 Location = new Point(inputLeft, 6),
                 Size = new Size(inputWidth, 28),
                 TextAlign = ContentAlignment.MiddleLeft,
@@ -620,7 +599,7 @@ namespace WordNetProgram
 
             picker.ChkSelectAll = new CheckBox
             {
-                Text = "Select / Unselect Visible (None = Use Number)",
+                Text = "Select / Unselect Visible",
                 Location = new Point(8, 34),
                 AutoSize = true,
                 Font = new Font("Segoe UI", 8.5f, FontStyle.Bold)
@@ -1219,15 +1198,10 @@ namespace WordNetProgram
 
             string FormatDescendantJson(DropdownSection section)
             {
-                bool showDescendants = section.ChkNumberOfDescendant.Checked;
-                string numDescVal = "null"; // Blank = unlimited
-                if (showDescendants && int.TryParse(section.TbNumberOfDescendant.Text.Trim(), out int parsedNum) && parsedNum >= 0)
-                {
-                    numDescVal = parsedNum.ToString();
-                }
+                bool showDescendants = section.ChkDescendantNodes != null && section.ChkDescendantNodes.Checked;
 
                 var selectedDescOffsets = new List<string>();
-                if (section.ChkDescendantNodes != null && section.ChkDescendantNodes.Checked)
+                if (showDescendants)
                 {
                     foreach (string off in section.CheckedDescendantNodeOffsets)
                     {
@@ -1236,7 +1210,7 @@ namespace WordNetProgram
                 }
                 string selectedDescJson = $"[{string.Join(",", selectedDescOffsets)}]";
 
-                return $"\"{section.Level}\":{{\"show_descendants\":{(showDescendants ? "true" : "false")},\"number_of_descendant\":{numDescVal},\"selected_descendants\":{selectedDescJson}}}";
+                return $"\"{section.Level}\":{{\"show_descendants\":{(showDescendants ? "true" : "false")},\"selected_descendants\":{selectedDescJson}}}";
             }
 
             var ancEntries = newFilterDropdownSections
@@ -1479,21 +1453,16 @@ namespace WordNetProgram
                 .Where(s => !s.IsAncestor)
                 .Select(section =>
                 {
-                    bool showDescendants = section.ChkNumberOfDescendant.Checked;
-                    string numDescVal = "null";
-                    if (showDescendants && int.TryParse(section.TbNumberOfDescendant.Text.Trim(), out int parsedNum) && parsedNum >= 0)
-                    {
-                        numDescVal = parsedNum.ToString();
-                    }
+                    bool showDescendants = section.ChkDescendantNodes != null && section.ChkDescendantNodes.Checked;
 
                     var selectedDescOffsets = new List<string>();
-                    if (section.ChkDescendantNodes != null && section.ChkDescendantNodes.Checked)
+                    if (showDescendants)
                     {
                         foreach (string off in section.CheckedDescendantNodeOffsets)
                             selectedDescOffsets.Add($"\"{off}\"");
                     }
 
-                    return $"\"{section.Level}\":{{\"show_descendants\":{(showDescendants ? "true" : "false")},\"number_of_descendant\":{numDescVal},\"selected_descendants\":[{string.Join(",", selectedDescOffsets)}]}}";
+                    return $"\"{section.Level}\":{{\"show_descendants\":{(showDescendants ? "true" : "false")},\"selected_descendants\":[{string.Join(",", selectedDescOffsets)}]}}";
                 });
 
             string escapedQuery = query.Replace("\\", "\\\\").Replace("\"", "\\\"");
@@ -1668,8 +1637,6 @@ namespace WordNetProgram
             public bool IsUpdatingChecks { get; set; }
 
             // Descendant controls
-            public CheckBox ChkNumberOfDescendant { get; set; }
-            public TextBox TbNumberOfDescendant { get; set; }
             public CheckBox ChkDescendantNodes { get; set; }
             public DepthPickerControl DescendantPicker { get; set; }
             public List<SynsetDropdownItem> DescendantNodeItems { get; set; } = new List<SynsetDropdownItem>();
@@ -2042,13 +2009,13 @@ namespace WordNetProgram
                 int count = CheckedDescendantNodeOffsets.Count;
 
                 if (total == 0)
-                    DescendantPicker.BtnPick.Text = "Choose Nodes (Auto) ▼";
+                    DescendantPicker.BtnPick.Text = "Choose Synsets ▼";
                 else if (count == 0)
-                    DescendantPicker.BtnPick.Text = $"Auto ({total} avail) ▼";
+                    DescendantPicker.BtnPick.Text = $"Choose Synsets (0/{total}) ▼";
                 else if (count == total)
-                    DescendantPicker.BtnPick.Text = $"All ({total}) Picked ▼";
+                    DescendantPicker.BtnPick.Text = $"All Selected ({total}) ▼";
                 else
-                    DescendantPicker.BtnPick.Text = $"{count}/{total} Picked ▼";
+                    DescendantPicker.BtnPick.Text = $"{count}/{total} Selected ▼";
             }
 
             public void ApplyDescendantSearchFilter(string searchText)
